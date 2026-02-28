@@ -137,7 +137,17 @@ backend/alembic/__pycache__/
 .claude/
 oh-my-opencode.json
 opencode.json
-AGENTS.md
+
+# ========================================
+# 根目录杂项文件（仅保留 backend/ frontend/ AGENTS.md）
+# ========================================
+nul
+oh-my-opencode配置.md
+oh-my-opencode配置说明.md
+scripts/
+入录数据/
+执行手册/
+oh-my-opencode/
 
 # ========================================
 # 文档（自动/手动生成的过程文档）
