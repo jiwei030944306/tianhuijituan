@@ -1,0 +1,743 @@
+<script setup lang="ts">
+/**
+ * 通用使用说明组件
+ * 参考 React 版本的设计，适配 Vue 3 + Element Plus
+ */
+import { ref, computed } from 'vue';
+import {
+  Upload,
+  FolderOpened,
+  Edit,
+  Document,
+  User,
+  School,
+  Grid,
+  ArrowRight,
+  InfoFilled,
+  QuestionFilled,
+  WarningFilled,
+  CircleCheckFilled,
+  Search,
+  Monitor,
+  VideoPlay,
+  Delete,
+  Lock,
+  Lightning
+} from '@element-plus/icons-vue';
+
+// 页面类型
+type PageType = 'uploads' | 'home' | 'landing';
+
+// 步骤项接口
+interface StepItem {
+  num: string;
+  title: string;
+  desc: string;
+  icon: string;
+  color: string;
+}
+
+// 页面配置接口
+interface PageConfig {
+  title: string;
+  subtitle: string;
+  steps: StepItem[];
+  tipsTitle: string;
+  tips: string[];
+  heroType: 'upload' | 'p1' | 'p2' | 'p3' | 'landing' | 'default';
+}
+
+// Props
+interface Props {
+  modelValue: boolean;
+  pageType: PageType;
+}
+
+const props = defineProps<Props>();
+
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: boolean): void;
+}>();
+
+const dialogVisible = computed({
+  get: () => props.modelValue,
+  set: (value) => emit('update:modelValue', value)
+});
+
+const closeGuide = () => {
+  dialogVisible.value = false;
+  // 记录用户已看过引导
+  localStorage.setItem(`${props.pageType}_guide_shown`, 'true');
+};
+
+// 页面配置
+const pageConfigs: Record<PageType, PageConfig> = {
+  uploads: {
+    title: "资源导入向导",
+    subtitle: "这是流水线的起点。负责将非结构化的本地文件(ZIP/JSON)转换为系统可读的结构化数据。",
+    steps: [
+      {
+        num: "01",
+        title: "选择文件",
+        desc: "点击上传区域选择 ZIP 或 JSON 文件。推荐使用 ZIP 格式以包含图片。",
+        icon: "Upload",
+        color: "text-blue-600 bg-blue-50 border-blue-100",
+      },
+      {
+        num: "02",
+        title: "等待处理",
+        desc: "观察实时终端窗口。系统会自动进行解压、解析和入库操作。",
+        icon: "Monitor",
+        color: "text-slate-600 bg-slate-100 border-slate-200",
+      },
+      {
+        num: "03",
+        title: "前往 P1",
+        desc: "当看到「导入成功」绿色提示后,点击右侧出现的「去处理」按钮。",
+        icon: "VideoPlay",
+        color: "text-indigo-600 bg-indigo-50 border-indigo-100",
+      },
+    ],
+    tipsTitle: "常见问题 (FAQ)",
+    tips: [
+      "❓ 为什么进度条卡在 99%？通常是在解压大文件，请耐心等待 10-20 秒。",
+      "💡 技巧：单次建议上传不超过 100MB 的压缩包，以获得最快的处理速度。",
+      "⚠️ 注意：文件名不要包含特殊字符，否则可能导致解压失败。",
+    ],
+    heroType: "upload",
+  },
+  home: {
+    title: "工作台导航",
+    subtitle: "欢迎来到智研题库云工作台。这里是您的操作中心，可以快速访问各个功能模块。",
+    steps: [
+      {
+        num: "01",
+        title: "选择学科",
+        desc: "在顶部切换不同的学科和学段，系统会自动加载对应的知识图谱。",
+        icon: "School",
+        color: "text-indigo-600 bg-indigo-50 border-indigo-100",
+      },
+      {
+        num: "02",
+        title: "访问模块",
+        desc: "点击左侧导航栏的按钮，快速跳转到上传、处理、归档等模块。",
+        icon: "Grid",
+        color: "text-purple-600 bg-purple-50 border-purple-100",
+      },
+      {
+        num: "03",
+        title: "查看统计",
+        desc: "在仪表盘查看累计导入批次、试题数、图片数等关键指标。",
+        icon: "Document",
+        color: "text-emerald-600 bg-emerald-50 border-emerald-100",
+      },
+    ],
+    tipsTitle: "使用技巧",
+    tips: [
+      "💡 点击左上角的 Logo 可随时返回首页。",
+      "🔒 数据仅存储在本地，清除缓存会丢失数据。",
+      "📊 点击 P4 看板可查看全局生产进度。",
+    ],
+    heroType: "default",
+  },
+  landing: {
+    title: "智研题库云快速上手",
+    subtitle: "三步开启智能化教研之旅。系统将自动引导您完成身份验证与环境配置。",
+    steps: [
+      {
+        num: "01",
+        title: "身份鉴权",
+        desc: "点击右上角登录按钮。使用测试账号解锁完整功能。",
+        icon: "User",
+        color: "text-slate-600 bg-slate-100 border-slate-200",
+      },
+      {
+        num: "02",
+        title: "场景定义",
+        desc: "在屏幕中央选择所属的学段（初/高）与学科，初始化知识图谱。",
+        icon: "School",
+        color: "text-indigo-600 bg-indigo-50 border-indigo-100",
+      },
+      {
+        num: "03",
+        title: "进入工作台",
+        desc: "点击下方大按钮进入协作大厅。也可浏览底部的文档与工具。",
+        icon: "Grid",
+        color: "text-purple-600 bg-purple-50 border-purple-100",
+      },
+    ],
+    tipsTitle: "账号信息",
+    tips: [
+      "🔑 测试账号: jiwei / 123",
+      "🔒 未登录状态下仅可浏览基础页面。",
+      "🌐 推荐使用 Chrome 浏览器以获得最佳性能。",
+    ],
+    heroType: "landing",
+  },
+};
+
+// Icon映射表
+const iconMap: Record<string, any> = {
+  Upload,
+  FolderOpened,
+  Edit,
+  Document,
+  User,
+  School,
+  Grid,
+  ArrowRight,
+  InfoFilled,
+  QuestionFilled,
+  WarningFilled,
+  CircleCheckFilled,
+  Search,
+  Monitor,
+  VideoPlay,
+  Delete,
+  Lock,
+  Lightning
+};
+
+// 获取当前页面配置
+const currentPage = computed(() => {
+  const config = pageConfigs[props.pageType];
+  if (!config) {
+    console.warn(`未找到页面类型 "${props.pageType}" 的配置，使用默认配置`);
+    return pageConfigs.home; // 使用home作为默认配置
+  }
+  return config;
+});
+</script>
+
+<template>
+  <el-dialog
+    v-model="dialogVisible"
+    width="900px"
+    :close-on-click-modal="false"
+    class="help-guide-dialog"
+    :show-close="true"
+  >
+    <!-- Hero Section -->
+    <div class="hero-section">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <el-icon><InfoFilled /></el-icon>
+          <span>GUIDEBOOK</span>
+        </div>
+        <h2 class="hero-title">{{ currentPage.title }}</h2>
+        <p class="hero-subtitle">{{ currentPage.subtitle }}</p>
+      </div>
+      <div class="hero-visual">
+        <!-- Upload Hero -->
+        <div v-if="currentPage.heroType === 'upload'" class="hero-visual-upload">
+          <div class="upload-flow">
+            <div class="flow-item">
+              <div class="flow-icon"><el-icon><Document /></el-icon></div>
+            </div>
+            <div class="flow-dots">
+              <div class="dot"></div>
+              <div class="dot"></div>
+              <div class="dot"></div>
+            </div>
+            <div class="flow-item">
+              <div class="flow-icon"><el-icon><Document /></el-icon></div>
+            </div>
+          </div>
+          <div class="flow-label">ETL Pipeline Active</div>
+        </div>
+
+        <!-- Landing Hero -->
+        <div v-else-if="currentPage.heroType === 'landing'" class="hero-visual-landing">
+          <el-icon class="pulse-icon"><Lightning /></el-icon>
+          <div class="landing-label">System Ready</div>
+        </div>
+
+        <!-- Default Hero -->
+        <div v-else class="hero-visual-default">
+          <div class="workflow-step">
+            <el-icon><Upload /></el-icon>
+            <span>P0 上传</span>
+          </div>
+          <el-icon class="arrow"><ArrowRight /></el-icon>
+          <div class="workflow-step active">
+            <el-icon><FolderOpened /></el-icon>
+            <span>P1 同步</span>
+          </div>
+          <el-icon class="arrow"><ArrowRight /></el-icon>
+          <div class="workflow-step">
+            <el-icon><Edit /></el-icon>
+            <span>P2 标化</span>
+          </div>
+          <el-icon class="arrow"><ArrowRight /></el-icon>
+          <div class="workflow-step">
+            <el-icon><Document /></el-icon>
+            <span>P3 归档</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Steps Section -->
+    <div class="steps-section">
+      <h3 class="section-title">
+        <el-icon><InfoFilled /></el-icon>
+        核心流程 (Core Workflow)
+      </h3>
+      <div class="steps-grid">
+        <div
+          v-for="(step, index) in currentPage.steps"
+          :key="index"
+          class="step-card"
+        >
+          <!-- 背景装饰数字 -->
+          <span class="step-number">{{ step.num }}</span>
+
+          <div class="step-header">
+            <div :class="['step-icon-box', step.color]">
+              <el-icon><component :is="iconMap[step.icon]" /></el-icon>
+            </div>
+          </div>
+          <h4 class="step-title">{{ step.title }}</h4>
+          <p class="step-desc">{{ step.desc }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tips Section -->
+    <div class="tips-section">
+      <h3 class="tips-title">
+        <el-icon><QuestionFilled /></el-icon>
+        {{ currentPage.tipsTitle }}
+      </h3>
+      <div class="tips-list">
+        <div v-for="(tip, index) in currentPage.tips" :key="index" class="tip-item">
+          <span class="tip-emoji">{{ tip.substring(0, 2) }}</span>
+          <span class="tip-text">{{ tip.substring(2) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button type="primary" size="large" @click="closeGuide" class="guide-action-button">
+          明白，开始操作
+          <el-icon class="ml-1"><ArrowRight /></el-icon>
+        </el-button>
+      </div>
+    </template>
+  </el-dialog>
+</template>
+
+<style scoped>
+.help-guide-dialog {
+  --el-dialog-bg-color: #ffffff;
+}
+
+/* 移除 Dialog body 的默认 padding */
+.help-guide-dialog :deep(.el-dialog__body) {
+  padding: 0 !important;
+}
+
+/* 移除 Dialog header */
+.help-guide-dialog :deep(.el-dialog__header) {
+  display: none;
+}
+
+/* Hero Section 内部添加 padding */
+.hero-section {
+  display: flex;
+  align-items: flex-start;
+  gap: 48px;
+  background: #ffffff;
+  padding: 40px 32px 32px 32px;
+  margin-bottom: 0;
+}
+
+/* 其他内容区域添加 padding */
+.steps-section,
+.tips-section {
+  margin: 0 32px 32px 32px;
+}
+
+.hero-content {
+  flex: 1;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  color: #818cf8;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 16px;
+}
+
+.hero-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 12px 0;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.hero-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 520px;
+}
+
+.hero-visual {
+  width: 320px;
+  flex-shrink: 0;
+}
+
+/* Upload Hero Visual */
+.hero-visual-upload {
+  width: 100%;
+  height: 128px;
+  background: linear-gradient(to right, #eff6ff, #e0e7ff);
+  border-radius: 12px;
+  border: 1px solid #c7d2fe;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-flow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 1;
+}
+
+.flow-item {
+  width: 64px;
+  height: 64px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #bfdbfe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.flow-icon {
+  font-size: 32px;
+  color: #6366f1;
+}
+
+.flow-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #93c5fd;
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+.flow-label {
+  position: absolute;
+  bottom: 8px;
+  font-size: 10px;
+  color: #818cf8;
+  font-family: monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Landing Hero Visual */
+.hero-visual-landing {
+  width: 100%;
+  height: 128px;
+  background: linear-gradient(to right, #4f46e5, #9333ea);
+  border-radius: 12px;
+  border: 1px solid #6366f1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.pulse-icon {
+  font-size: 32px;
+  color: white;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.landing-label {
+  margin-top: 8px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Default Hero Visual */
+.hero-visual-default {
+  width: 100%;
+  height: 128px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+}
+
+.workflow-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.5;
+  font-size: 10px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.workflow-step.active {
+  opacity: 1;
+  color: #3b82f6;
+}
+
+.arrow {
+  color: #cbd5e1;
+  font-size: 16px;
+}
+
+/* Steps Section */
+.steps-section {
+  margin-bottom: 24px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 24px 0;
+}
+
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.step-card {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.step-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #c7d2fe;
+}
+
+.step-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.step-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.step-number {
+  font-size: 64px;
+  font-weight: 800;
+  color: #f8fafc;
+  transition: color 0.2s;
+  user-select: none;
+  line-height: 1;
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  z-index: 0;
+}
+
+.step-card:hover .step-number {
+  color: #e0e7ff;
+}
+
+.step-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 8px 0;
+  transition: color 0.2s;
+  position: relative;
+  z-index: 1;
+}
+
+.step-card:hover .step-title {
+  color: #4f46e5;
+}
+
+.step-desc {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* Tips Section */
+.tips-section {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.tips-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 16px 0;
+}
+
+.tips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tip-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.tip-emoji {
+  flex-shrink: 0;
+  user-select: none;
+}
+
+/* Footer */
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 24px 32px;
+  background: #ffffff;
+  border-top: 1px solid #f1f5f9;
+}
+
+.guide-action-button {
+  background: #1f2937 !important;
+  border-color: #1f2937 !important;
+  padding: 12px 24px !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+}
+
+.guide-action-button:hover {
+  background: #111827 !important;
+  border-color: #111827 !important;
+}
+
+.ml-1 {
+  margin-left: 4px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hero-section {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .hero-subtitle {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero-visual {
+    width: 100%;
+  }
+
+  .steps-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

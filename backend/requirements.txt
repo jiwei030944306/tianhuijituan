@@ -1,0 +1,26 @@
+# Core Framework
+fastapi==0.128.0
+uvicorn[standard]==0.40.0
+pydantic>=2.5.0
+pydantic-settings>=2.0.0
+sqlalchemy>=2.0.0
+
+# Database Drivers
+asyncpg==0.29.0
+psycopg2-binary>=2.9.9
+
+# HTTP and File Upload
+python-multipart>=0.0.6
+httpx>=0.26.0
+
+# Testing
+pytest>=7.4.3
+pytest-asyncio>=0.21.1
+
+# File Operations
+aiofiles>=24.1.0
+
+# JWT Authentication
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+bcrypt>=4.0.0
