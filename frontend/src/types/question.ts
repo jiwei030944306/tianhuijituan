@@ -380,3 +380,35 @@ export function getTypesBySubjectEnglish(subject: string, level: EducationLevel 
   const chineseTypes = QUESTION_TYPES[level]?.[subject] || [];
   return chineseTypes.map(cn => QUESTION_TYPE_TO_ENGLISH[cn] || cn);
 }
+
+
+// ==================== 知识点筛选相关类型 ====================
+
+/**
+ * 知识点标签项
+ * 用于知识点筛选器展示
+ */
+export interface KnowledgeTag {
+  name: string;           // 知识点名称
+  count: number;          // 关联题目数量
+  selected?: boolean;     // 是否选中（可选，用于UI状态）
+}
+
+/**
+ * 知识点筛选条件
+ * 扩展 QuestionFilters 支持知识点筛选
+ */
+export interface KnowledgeFilter {
+  topics: string[];       // 选中的知识点列表
+}
+
+/**
+ * 知识点统计
+ * 用于展示知识点分布情况
+ */
+export interface KnowledgeStats {
+  total: number;          // 知识点总数
+  withTopics: number;     // 有知识点的题目数
+  withoutTopics: number;  // 无知识点的题目数
+  distribution: KnowledgeTag[];  // 知识点分布列表
+}
