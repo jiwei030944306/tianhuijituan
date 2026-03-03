@@ -38,6 +38,28 @@ const searchKeyword = ref('');
 const currentPage = ref(1);
 const pageSize = ref(20);
 
+// --- 筛选条件 ---
+const selectedType = ref<string>('ALL');
+const selectedDifficulty = ref<string>('ALL');
+
+// 题型选项（根据学科动态生成）
+const typeOptions = computed(() => {
+  const types = new Set(questions.value.map(q => q.type).filter(Boolean));
+  return [
+    { value: 'ALL', label: '全部题型' },
+    ...Array.from(types).map(t => ({ value: t!, label: t! }))
+  ];
+});
+
+// 难度选项
+const difficultyOptions = [
+  { value: 'ALL', label: '全部难度' },
+  { value: 'easy', label: '基础' },
+  { value: 'medium', label: '中等' },
+  { value: 'hard', label: '困难' },
+  { value: 'challenge', label: '挑战' }
+];
+
 // --- 知识点统计 ---
 const knowledgeStats = computed(() => {
   const stats: Record<string, number> = {};
@@ -56,6 +78,16 @@ const knowledgeStats = computed(() => {
 // --- 筛选后的题目列表 ---
 const filteredQuestions = computed(() => {
   let result = questions.value;
+
+  // 按题型筛选
+  if (selectedType.value !== 'ALL') {
+    result = result.filter(q => q.type === selectedType.value);
+  }
+
+  // 按难度筛选
+  if (selectedDifficulty.value !== 'ALL') {
+    result = result.filter(q => q.difficulty === selectedDifficulty.value);
+  }
 
   // 按知识点筛选
   if (selectedTopics.value.length > 0) {
@@ -208,11 +240,7 @@ onMounted(() => {
     <main class="flex-1 flex flex-col overflow-hidden">
       <!-- 顶部搜索栏 -->
       <header class="bg-white border-b border-slate-200 p-4">
-        <div class="flex items-center gap-4">
-          <span class="text-sm text-slate-500">
-            共 <strong class="text-slate-900">{{ filteredQuestions.length }}</strong> 道题目
-          </span>
-
+        <div class="flex items-center gap-3">
           <!-- 搜索框 -->
           <div class="relative flex-1 max-w-md">
             <input
@@ -231,7 +259,27 @@ onMounted(() => {
             </svg>
           </div>
 
-          <!-- 筛选标签 -->
+          <!-- 题型筛选 -->
+          <select
+            v-model="selectedType"
+            class="px-3 py-2 rounded-lg border border-slate-300 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+          >
+            <option v-for="opt in typeOptions" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </option>
+          </select>
+
+          <!-- 难度筛选 -->
+          <select
+            v-model="selectedDifficulty"
+            class="px-3 py-2 rounded-lg border border-slate-300 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+          >
+            <option v-for="opt in difficultyOptions" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </option>
+          </select>
+
+          <!-- 已选知识点标签 -->
           <span
             v-if="selectedTopics.length > 0"
             class="px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-medium"
