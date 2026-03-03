@@ -168,6 +168,8 @@ onMounted(async () => {
   // 1. 加载知识点树（从配置文件，不依赖后端）
   // contextStore.grade 是 'junior' 或 'senior'（英文），不是 '七年级'
   const educationLevel = (currentGrade === 'junior' || currentGrade.includes('七') || currentGrade.includes('八') || currentGrade.includes('九')) ? '初中' : '高中';
+  console.log('[QuestionLibrary] 知识点树:', { currentSubject, currentGrade, educationLevel });
+
   knowledgeTree.value = getKnowledgeTree(currentSubject, educationLevel);
   
   // 2. 默认展开所有主分类和子分类
@@ -182,6 +184,24 @@ onMounted(async () => {
   try {
     await fetchQuestions();
   } catch (err) {
+    console.error('获取题目失败，但知识点筛选功能可用:', err);
+    // 即使获取题目失败，知识点筛选功能仍然可用
+    errorMsg.value = null; // 清除错误，让页面正常显示
+  }
+
+  // --- 调试日志（开发时使用，生产环境请删除） ---
+  // 取消下面代码块的注释以查看详细调试信息
+  /*
+  console.group('🔍 KnowledgeTree Debug');
+  console.log('currentSubject:', currentSubject);
+  console.log('currentGrade:', currentGrade);
+  console.log('educationLevel:', educationLevel);
+  console.log('getKnowledgeTree result:', getKnowledgeTree(currentSubject, educationLevel));
+  console.log('knowledgeTree.value:', knowledgeTree.value);
+  console.log('knowledgeTree.value length:', knowledgeTree.value.length);
+  console.groupEnd();
+  */
+});
     console.error('获取题目失败，但知识点筛选功能可用:', err);
     // 即使获取题目失败，知识点筛选功能仍然可用
     errorMsg.value = null; // 清除错误，让页面正常显示
