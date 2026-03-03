@@ -91,9 +91,12 @@ const fetchQuestions = async () => {
   errorMsg.value = null;
   
   try {
+    // 将中文年级转换为数字（七年级 -> 7）
+    const gradeNumber = parseInt(currentGrade.replace(/[^\d]/g, '')) || 7;
+    
     const data = await questionApi.getList({
       subject: currentSubject,
-      grade: currentGrade
+      grade: gradeNumber
     });
     questions.value = data;
   } catch (err) {
