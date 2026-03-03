@@ -166,7 +166,9 @@ const clearTopicFilter = () => {
 // --- 初始化挂载 ---
 onMounted(() => {
   // 加载知识点树
-  knowledgeTree.value = getKnowledgeTree(currentSubject);
+  // 加载知识点树（需要学科和学段）
+  const educationLevel = currentGrade.includes('七') || currentGrade.includes('八') || currentGrade.includes('九') ? '初中' : '高中';
+  knowledgeTree.value = getKnowledgeTree(currentSubject, educationLevel);
   
   // 默认展开所有主分类和子分类
   knowledgeTree.value.forEach(group => {
