@@ -166,7 +166,8 @@ const clearTopicFilter = () => {
 // --- 初始化挂载 ---
 onMounted(async () => {
   // 1. 加载知识点树（从配置文件，不依赖后端）
-  const educationLevel = currentGrade.includes('七') || currentGrade.includes('八') || currentGrade.includes('九') ? '初中' : '高中';
+  // contextStore.grade 是 'junior' 或 'senior'（英文），不是 '七年级'
+  const educationLevel = (currentGrade === 'junior' || currentGrade.includes('七') || currentGrade.includes('八') || currentGrade.includes('九')) ? '初中' : '高中';
   knowledgeTree.value = getKnowledgeTree(currentSubject, educationLevel);
   
   // 2. 默认展开所有主分类和子分类
