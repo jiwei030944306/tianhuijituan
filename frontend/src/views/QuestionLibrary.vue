@@ -42,10 +42,28 @@ const pageSize = ref(20);
 const knowledgeStats = computed(() => {
   const stats: Record<string, number> = {};
   
+  // 初始化所有知识点为 0
+  const allTopics = new Set<string>();
+  knowledgeTree.value.forEach(group => {
+    group.children?.forEach(subGroup => {
+      subGroup.children?.forEach(leaf => {
+        allTopics.add(leaf.name);
+        stats[leaf.name] = 0;
+      });
+    });
+  });
+  
+  // 统计题目中的知识点（优先 topics，其次 aiTopics）
   questions.value.forEach(q => {
-    if (q.topic) {
-      stats[q.topic] = (stats[q.topic] || 0) + 1;
-    }
+    const topics = (q.topics && q.topics.length > 0) 
+      ? q.topics 
+      : (q.aiTopics || []);
+    
+    topics.forEach(topic => {
+      if (topic && stats.hasOwnProperty(topic)) {
+        stats[topic]++;
+      }
+    });
   });
   
   return stats;
@@ -57,18 +75,21 @@ const filteredQuestions = computed(() => {
   
   // 按知识点筛选
   if (selectedTopics.value.length > 0) {
-    result = result.filter(q => 
-      q.topic && selectedTopics.value.includes(q.topic)
-    );
+    result = result.filter(q => {
+      const topics = q.topics && q.topics.length > 0 ? q.topics : (q.aiTopics || []);
+      return topics.some(t => selectedTopics.value.includes(t));
+    });
   }
   
-  // 按关键词搜索
+  // 按关键词搜索（搜索题干和知识点）
   if (searchKeyword.value.trim()) {
     const keyword = searchKeyword.value.toLowerCase();
-    result = result.filter(q => 
-      (q.content && q.content.toLowerCase().includes(keyword)) ||
-      (q.topic && q.topic.toLowerCase().includes(keyword))
-    );
+    result = result.filter(q => {
+      const stemMatch = q.stem && q.stem.toLowerCase().includes(keyword);
+      const topicsMatch = q.topics?.some(t => t.toLowerCase().includes(keyword)) ||
+                         q.aiTopics?.some(t => t.toLowerCase().includes(keyword));
+      return stemMatch || topicsMatch;
+    });
   }
   
   return result;
@@ -96,7 +117,9 @@ const fetchQuestions = async () => {
     
     const data = await questionApi.getList({
       subject: currentSubject,
-      grade: gradeNumber
+      grade: gradeNumber,
+      skip: 0,
+      limit: 1000  // 获取所有题目用于本地筛选
     });
     questions.value = data;
   } catch (err) {
@@ -309,17 +332,17 @@ onMounted(() => {
               <div class="flex-1">
                 <!-- 题目内容预览 -->
                 <div class="text-sm text-slate-800 line-clamp-2 mb-2">
-                  {{ question.content?.substring(0, 200) || '无内容' }}
-                  <span v-if="question.content && question.content.length > 200">...</span>
+                  {{ question.stem?.substring(0, 200) || '无题干内容' }}
+                  <span v-if="question.stem && question.stem.length > 200">...</span>
                 </div>
                 
                 <!-- 标签信息 -->
                 <div class="flex items-center gap-2 flex-wrap">
                   <span
-                    v-if="question.topic"
+                    v-if="question.topics && question.topics.length > 0"
                     class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 text-xs font-medium"
                   >
-                    {{ question.topic }}
+                    {{ question.topics[0] }}
                   </span>
                   <span
                     v-if="question.type"
