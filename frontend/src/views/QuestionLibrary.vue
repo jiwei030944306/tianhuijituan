@@ -142,9 +142,9 @@ const clearTopicFilter = () => {
 
 // --- 初始化挂载 ---
 onMounted(() => {
-  // 加载知识点树
-  knowledgeTree.value = getKnowledgeTree(currentSubject);
-  
+  // 加载知识点树（需要学科和学段两个参数）
+  knowledgeTree.value = getKnowledgeTree(currentSubject, currentLevel);
+
   // 默认展开所有主分类和子分类
   knowledgeTree.value.forEach(group => {
     expandedGroups.value.add(group.id);
@@ -152,7 +152,7 @@ onMounted(() => {
       expandedSubGroups.value.add(`${group.id}-${subGroup.id}`);
     });
   });
-  
+
   // 获取题目列表
   fetchQuestions();
 });
