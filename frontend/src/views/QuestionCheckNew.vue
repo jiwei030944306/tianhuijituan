@@ -351,8 +351,7 @@ const fetchBatchQuestions = async (batchId: string) => {
   errorMsg.value = null;
   displayQuestions.value = [];
   try {
-    const folderCode = contextStore.folderCode;
-    const response = await fetch(`/api/questions/batch/${batchId}?folder_code=${folderCode}`);
+    const response = await fetch(`/api/questions/batch/${batchId}`);
     if (!response.ok) throw new Error('获取题目失败');
     const data = await response.json();
     displayQuestions.value = data.questions || [];
