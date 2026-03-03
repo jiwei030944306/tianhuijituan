@@ -206,22 +206,14 @@ onMounted(() => {
     
     <!-- 右侧主内容区 -->
     <main class="flex-1 flex flex-col overflow-hidden">
-      <!-- 顶部统计与搜索栏 -->
+      <!-- 顶部搜索栏 -->
       <header class="bg-white border-b border-slate-200 p-4">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h1 class="text-2xl font-bold text-slate-900">题库管理</h1>
-            <p class="text-slate-600 text-sm mt-1">浏览已过审的精品题库</p>
-          </div>
-          <div class="flex items-center gap-3">
-            <span class="text-sm text-slate-500">
-              共 <strong class="text-slate-900">{{ filteredQuestions.length }}</strong> 道题目
-            </span>
-          </div>
-        </div>
-        
-        <!-- 搜索框 -->
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-4">
+          <span class="text-sm text-slate-500">
+            共 <strong class="text-slate-900">{{ filteredQuestions.length }}</strong> 道题目
+          </span>
+
+          <!-- 搜索框 -->
           <div class="relative flex-1 max-w-md">
             <input
               v-model="searchKeyword"
@@ -238,16 +230,14 @@ onMounted(() => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          
+
           <!-- 筛选标签 -->
-          <div class="flex items-center gap-2">
-            <span
-              v-if="selectedTopics.length > 0"
-              class="px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-medium"
-            >
-              {{ selectedTopics.length }} 个知识点
-            </span>
-          </div>
+          <span
+            v-if="selectedTopics.length > 0"
+            class="px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-medium"
+          >
+            {{ selectedTopics.length }} 个知识点
+          </span>
         </div>
       </header>
       
