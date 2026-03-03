@@ -187,7 +187,8 @@ const stats = computed(() => {
   optimizeTime.value = null;
 
     try {
-      const response = await apiClient.get(`/api/questions/batch/${batchId}`);
+      const folderCode = 'm7s9m2'; // 测试用 folder_code
+      const response = await apiClient.get(`/api/questions/batch/${batchId}?folder_code=${folderCode}`);
       const data = response?.data;
       questions.value = data?.questions || [];
     } catch (error: unknown) {

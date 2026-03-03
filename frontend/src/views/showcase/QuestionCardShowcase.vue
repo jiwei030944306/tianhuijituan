@@ -97,8 +97,9 @@ async function fetchQuestions() {
   try {
     // 使用批次 ID 获取真实试题数据
     const batchId = '20260204-214305-atctxn'
+    const folderCode = 'm7s9m2' // 测试用 folder_code
     currentBatchId.value = batchId
-    const response = await fetch(`/api/questions/batch/${batchId}`)
+    const response = await fetch(`/api/questions/batch/${batchId}?folder_code=${folderCode}`)
 
     if (!response.ok) {
       throw new Error(`获取数据失败: ${response.status} ${response.statusText}`)
