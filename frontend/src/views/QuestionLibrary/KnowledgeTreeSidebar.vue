@@ -70,7 +70,7 @@ const knowledgeGroups = computed<KnowledgeGroup[]>(() => {
         id: node.id,
         name: node.name,
         count: total,
-        expanded: true,  // 默认展开
+        expanded: true  // 默认展开,
         children: leaves
       };
     });
@@ -84,7 +84,7 @@ const knowledgeGroups = computed<KnowledgeGroup[]>(() => {
       id: node.id,
       name: node.name,
       count: total,
-      expanded: true,  // 默认展开
+      expanded: true  // 默认展开,
       children: subGroups
     };
   });
