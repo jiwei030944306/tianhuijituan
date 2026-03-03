@@ -21,8 +21,9 @@ if (!contextStore.grade || !contextStore.subject) {
   router.push('/');
 }
 
-const currentSubject = contextStore.subject || '数学';
+const currentSubject = contextStore.subjectName || '数学';  // 使用中文名称
 const currentGrade = contextStore.grade || '七年级';
+const educationLevel = (currentGrade === 'junior' || currentGrade.includes('七') || currentGrade.includes('八') || currentGrade.includes('九')) ? '初中' : '高中';
 
 // --- 知识点树 ---
 const knowledgeTree = ref<KnowledgeNode[]>([]);

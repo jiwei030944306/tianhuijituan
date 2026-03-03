@@ -1,0 +1,35 @@
+--- a/frontend/src/views/QuestionRefine.vue
++++ b/frontend/src/views/QuestionRefine.vue
+@@ -212,26 +212,20 @@ const suggestedTags = computed(() => {
+ 
+ // --- 业务方法区 ---
+ 
+-// 获取上传批次历史
+-const fetchBatchList = async () => {
++// 获取所有试题（直接读取数据库）
++const fetchAllQuestions = async () => {
+   isLoading.value = true;
+   errorMsg.value = null;
+   try {
+-    if (!folderCode) {
+-      errorMsg.value = '环境信息不完整，请重新选择学科学段';
+-      return;
+-    }
+-    const response = await fetch(`/api/questions/upload-history?folder_code=${folderCode}`);
++    const response = await fetch('/api/questions/');
+     if (!response.ok) throw new Error('获取试题失败');
+     const data = await response.json();
+-    allFiles.value = data.records || [];
+-    if (allFiles.value.length > 0 && !selectedFile.value) {
+-      selectedFile.value = allFiles.value[0].batch_id;
+-    }
++    displayQuestions.value = data;
++    allFiles.value = [];
++    selectedFile.value = null;
++    resetFilters();
+   } catch (error: any) {
+     errorMsg.value = error.message || '获取试题失败';
+   } finally {
+     isLoading.value = false;
+   }
+ };

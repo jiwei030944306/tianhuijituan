@@ -23,8 +23,8 @@ logger = logging.getLogger(__name__)
 # .parent.parent.parent.parent = 项目根目录/
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 
-# 上传根目录（使用绝对路径确保一致性）
-UPLOAD_ROOT = BASE_DIR / "data" / "uploads"
+# 上传根目录（使用项目data目录）
+UPLOAD_ROOT = Path(r"D:\newAI\天卉题云智研\data\uploads")
 
 # 确保上传目录存在
 UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)

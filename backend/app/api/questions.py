@@ -25,10 +25,12 @@ from app.schemas.question import (
     ConflictCheckRequest, QuestionBulkUpdateRequest
 )
 from app.models.upload_record import UploadRecord
+from app.models.question import Question as QuestionModel
 from app.core.database import get_db
 from app.utils.folder_utils import (
     generate_batch_id, create_batch_folder, write_operations_json,
-    get_batch_folder_path, get_all_operations_files, delete_batch_folder, remove_record_from_operations_json
+    get_batch_folder_path, get_all_operations_files, delete_batch_folder,
+    remove_record_from_operations_json, read_operations_json
 )
 from app.services.quality_check import quality_check_batch, archive_waste, convert_image_urls
 
@@ -50,7 +52,7 @@ async def get_statistics(
     return await crud_question.get_statistics(db)
 
 
-@router.get("/", response_model=List[QuestionResponse])
+@router.get("/", response_model=List[dict])
 async def get_questions(
     skip: int = Query(0, ge=0, description="跳过记录数"),
     limit: int = Query(100, ge=1, le=1000, description="返回记录数"),
@@ -66,12 +68,51 @@ async def get_questions(
     获取题目列表
 
     支持按类型、难度、状态、科目、年级、学段筛选
+    返回驼峰命名格式
     """
     questions = await crud_question.get_questions(
         db, skip=skip, limit=limit, type=type, difficulty=difficulty, status=status,
         subject=subject, grade=grade, education_level=education_level
     )
-    return questions
+
+    # 转换为驼峰命名
+    def to_camel_case(q: QuestionModel) -> dict:
+        return {
+            "id": q.id,
+            "questionNumber": q.question_number,
+            "type": q.type,
+            "difficulty": q.difficulty,
+            "status": q.status,
+            "stem": q.stem,
+            "answer": q.answer,
+            "options": json.loads(q.options) if q.options else [],
+            "stemImages": json.loads(q.stem_images) if q.stem_images else [],
+            "topics": json.loads(q.topics) if q.topics else [],
+            "category": q.category,
+            "analysis": q.analysis,
+            "comment": q.comment,
+            "statusMessage": q.status_message,
+            "grade": q.grade,
+            "subject": q.subject,
+            "educationLevel": q.education_level,
+            "source": q.source,
+            "sourceFolder": q.source_folder,
+            "version": q.version,
+            "aiGrade": q.ai_grade,
+            "aiDifficulty": q.ai_difficulty,
+            "aiTopics": json.loads(q.ai_topics) if q.ai_topics else [],
+            "aiCategory": q.ai_category,
+            "aiAnalysis": q.ai_analysis,
+            "aiReasoning": q.ai_reasoning,
+            "aiModel": q.ai_model,
+            "aiOptimizedAt": q.ai_optimized_at.isoformat() if q.ai_optimized_at else None,
+            "isAiOptimized": bool(q.is_ai_optimized),
+            "confirmedAt": q.confirmed_at.isoformat() if q.confirmed_at else None,
+            "createdAt": q.created_at.isoformat() if q.created_at else None,
+            "updatedAt": q.updated_at.isoformat() if q.updated_at else None,
+        }
+
+    return [to_camel_case(q) for q in questions]
 
 
 @router.get("/upload-history")
@@ -79,79 +120,50 @@ async def get_upload_history(
     folder_code: str = Query(..., description="学科学段短代码，如：m7s9m2")
 ):
     """
-    获取上传历史记录
+    获取上传历史记录（从文件系统读取）
 
-    读取指定 folder_code 下的所有 operations-*.json 文件，
-    合并返回所有历史记录，按时间倒序排序
-
-    优化：使用异步文件读取，防止阻塞事件循环
-
-    Args:
-        folder_code: 学科学段短代码
-
-    Returns:
-        历史记录数据，包含文件夹信息和记录列表
+    读取 operations-*.json 文件，返回指定 folder_code 下的所有批次记录，
+    按上传时间倒序排序。
     """
     try:
-        # 1. 在事件循环中运行同步的文件系统操作
-        loop = asyncio.get_event_loop()
-        operations_files = await loop.run_in_executor(None, get_all_operations_files, folder_code)
+        # 获取所有 operations 文件
+        operations_files = get_all_operations_files(folder_code)
 
-        if not operations_files:
-            # 目录不存在或没有文件，返回空结果
-            logger.info(f"未找到 folder_code={folder_code} 的历史记录文件")
-            return {
-                "folder_code": folder_code,
-                "education_level": "",
-                "subject": "",
-                "total_uploads": 0,
-                "records": []
-            }
-
-        # 2. 并发异步读取所有文件（提升性能）
         all_records = []
         education_level = ""
         subject = ""
 
-        async def read_single_file(file_path: str):
-            """异步读取单个文件"""
+        # 读取每个 operations 文件
+        from datetime import datetime
+        for file_path in operations_files:
             try:
-                async with aiofiles.open(file_path, 'r', encoding='utf-8') as f:
-                    content = await f.read()
-                    return json.loads(content)
-            except json.JSONDecodeError as e:
-                logger.warning(f"无法解析文件 {file_path}: {e}")
-                return None
-            except FileNotFoundError as e:
-                logger.warning(f"文件不存在 {file_path}: {e}")
-                return None
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+
+                if not education_level and data.get("education_level"):
+                    education_level = data["education_level"]
+                if not subject and data.get("subject"):
+                    subject = data["subject"]
+
+                # 转换 records 格式
+                for r in data.get("records", []):
+                    all_records.append({
+                        "batch_id": r.get("batch_id", ""),
+                        "display_name": r.get("display_name", ""),
+                        "timestamp": r.get("timestamp", ""),
+                        "status": r.get("status", "completed"),
+                        "teacher_name": r.get("teacher_name", ""),
+                        "original_filename": r.get("original_filename", ""),
+                        "file_count": r.get("file_count", 0),
+                        "image_count": r.get("image_count", 0),
+                    })
             except Exception as e:
-                logger.warning(f"读取文件 {file_path} 失败: {e}")
-                return None
-
-        # 并发读取所有文件
-        tasks = [read_single_file(file_path) for file_path in operations_files]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-
-        # 3. 合并数据
-        for data in results:
-            if data is None or isinstance(data, Exception):
+                logger.warning(f"读取文件失败: {file_path}, error={e}")
                 continue
 
-            # 提取学段和学科信息
-            if not education_level:
-                education_level = data.get("education_level", "")
-            if not subject:
-                subject = data.get("subject", "")
-
-            # 合并记录
-            records = data.get("records", [])
-            all_records.extend(records)
-
-        # 4. 按时间倒序排序
+        # 按时间倒序排序
         all_records.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
 
-        # 5. 返回结果
         return {
             "folder_code": folder_code,
             "education_level": education_level,
@@ -162,7 +174,6 @@ async def get_upload_history(
 
     except Exception as e:
         logger.error(f"获取历史记录失败: folder_code={folder_code}, error={e}", exc_info=True)
-        # 返回空结果而不是抛出异常，避免前端崩溃
         return {
             "folder_code": folder_code,
             "education_level": "",
@@ -332,164 +343,39 @@ async def upload_question_folder(
 @router.get("/batch/{batch_id}")
 async def get_batch_questions(
     batch_id: str,
-    db: AsyncSession = Depends(get_db)
+    folder_code: str = Query(..., description="学科学段短代码")
 ):
     """
-    获取批次中的题目列表
+    获取批次中的题目列表（从文件系统读取）
 
-    首次加载时自动执行 Step1 质检，结果持久化写回 JSON 文件
-    后续加载直接读取已质检数据，不重复执行
+    从批次文件夹中读取 questions.json 文件，返回该批次的所有题目。
     """
     try:
-        # 1. 查询批次记录
-        db_result = await db.execute(
-            select(UploadRecord).where(UploadRecord.batch_id == batch_id)
-        )
-        record = db_result.scalar_one_or_none()
+        # 获取批次文件夹路径
+        batch_path = get_batch_folder_path(folder_code, batch_id)
+        questions_file = os.path.join(batch_path, "questions.json")
 
-        if not record:
+        if not os.path.exists(questions_file):
             raise HTTPException(
                 status_code=404,
                 detail=f"批次 {batch_id} 不存在"
             )
 
-        # 2. 确定内容目录
-        content_dir = cast(str, record.full_path)
-        if not os.path.exists(content_dir):
-            raise HTTPException(status_code=404, detail="批次目录不存在")
+        # 读取 questions.json
+        with open(questions_file, 'r', encoding='utf-8') as f:
+            questions_data = json.load(f)
 
-        file_list = os.listdir(content_dir)
-        if len(file_list) == 1 and os.path.isdir(os.path.join(content_dir, file_list[0])):
-            content_dir = os.path.join(content_dir, file_list[0])
-
-        # 3. 读取 JSON 文件（排除废题归档文件）
-        json_files = sorted([
-            f for f in os.listdir(content_dir)
-            if f.endswith('.json') and not f.startswith('waste-')
-        ])
-
-        if not json_files:
-            return {
-                "batch_id": batch_id,
-                "folder_code": record.folder_code,
-                "display_name": record.display_name,
-                "questions": [],
-                "total": 0
-            }
-
-        # 4. 异步读取所有 JSON 文件，按文件记录来源
-        file_questions: dict[str, list] = {}
-
-        async def read_json_file(filename: str):
-            try:
-                filepath = os.path.join(content_dir, filename)
-                async with aiofiles.open(filepath, 'r', encoding='utf-8') as f:
-                    content = await f.read()
-                    data = json.loads(content)
-                    return data if isinstance(data, list) else []
-            except Exception as e:
-                logger.warning(f"无法解析 {filename}: {e}")
-                return []
-
-        tasks = [read_json_file(f) for f in json_files]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-
-        for filename, data in zip(json_files, results):
-            if isinstance(data, list):
-                file_questions[filename] = data
-
-        # 合并所有题目，并注入 subject/educationLevel/source/sourceFolder
-        all_questions = []
-        files_modified = set()  # 记录需要更新的文件
-
-        for filename, questions in file_questions.items():
-            file_is_dirty = False
-            for q in questions:
-                # 注入批次元数据 (使用驼峰命名以匹配前端)
-                if not q.get("subject"):
-                    q["subject"] = record.subject
-                    file_is_dirty = True
-                if not q.get("educationLevel"):
-                    # 优先使用驼峰，如果没有则尝试从 education_level 迁移
-                    q["educationLevel"] = q.get("education_level") or record.education_level
-                    file_is_dirty = True
-                if not q.get("sourceFolder"):
-                    q["sourceFolder"] = record.folder_code
-                    file_is_dirty = True
-                if not q.get("source"):
-                    q["source"] = record.display_name
-                    file_is_dirty = True
-
-                # 注入 AI 字段的驼峰命名 (兼容前端显示)
-                ai_fields_map = {
-                    "ai_optimized_at": "aiOptimizedAt",
-                    "ai_model": "aiModel",
-                    "ai_grade": "aiGrade",
-                    "ai_difficulty": "aiDifficulty",
-                    "ai_topics": "aiTopics",
-                    "ai_category": "aiCategory",
-                    "ai_analysis": "aiAnalysis",
-                    "ai_reasoning": "aiReasoning",
-                    "is_ai_optimized": "isAiOptimized"
-                }
-
-                for snake_key, camel_key in ai_fields_map.items():
-                    if snake_key in q and camel_key not in q:
-                        q[camel_key] = q[snake_key]
-                        file_is_dirty = True
-
-            if file_is_dirty:
-                files_modified.add(filename)
-
-            all_questions.extend(questions)
-
-        # 5. 检查是否需要质检（首次加载）
-        marker_path = os.path.join(content_dir, ".quality_checked")
-        needs_check = not os.path.exists(marker_path)
-
-        if needs_check and all_questions:
-            # 执行 Step1 质检（同步函数，题目已被 in-place 修改）
-            qc_result = quality_check_batch(all_questions, batch_id, content_dir)
-
-            # 归档废题
-            archive_waste(qc_result["waste"], content_dir)
-
-            # 写回 JSON 文件（质检结果持久化）
-            for filename, questions in file_questions.items():
-                filepath = os.path.join(content_dir, filename)
-                async with aiofiles.open(filepath, 'w', encoding='utf-8') as f:
-                    await f.write(json.dumps(questions, ensure_ascii=False, indent=2))
-
-            # 创建质检标记文件
-            async with aiofiles.open(marker_path, 'w') as f:
-                await f.write(datetime.now().isoformat())
-
-        elif files_modified:
-            # 如果不需要质检（非首次加载），但发现了数据缺失并进行了修补（如 source, AI字段等），则仅写回变更的文件
-            logger.info(f"批次 {batch_id} 检测到元数据缺失，正在修复并写回 {len(files_modified)} 个文件")
-            for filename in files_modified:
-                filepath = os.path.join(content_dir, filename)
-                questions = file_questions[filename]
-                async with aiofiles.open(filepath, 'w', encoding='utf-8') as f:
-                    await f.write(json.dumps(questions, ensure_ascii=False, indent=2))
-
-        # 6. 转换图片路径为 API URL（仅影响响应，不持久化）
-        convert_image_urls(all_questions, batch_id)
-
-        # 7. 返回结果
-        error_count = sum(
-            1 for q in all_questions
-            if q.get("status") in ("error", "waste")
-        )
+        questions = questions_data.get("questions", [])
+        error_count = sum(1 for q in questions if q.get("status") in ("error", "waste"))
 
         return {
             "batch_id": batch_id,
-            "folder_code": record.folder_code,
-            "display_name": record.display_name,
-            "questions": all_questions,
-            "total": len(all_questions),
+            "folder_code": folder_code,
+            "display_name": questions_data.get("display_name", batch_id),
+            "questions": questions,
+            "total": len(questions),
             "error_count": error_count,
-            "valid_count": len(all_questions) - error_count
+            "valid_count": len(questions) - error_count
         }
 
     except HTTPException:
