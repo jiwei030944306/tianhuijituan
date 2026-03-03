@@ -21,9 +21,8 @@ if (!contextStore.grade || !contextStore.subject) {
   router.push('/');
 }
 
-const currentSubject = contextStore.subjectName || '数学';  // 使用中文名称
+const currentSubject = contextStore.subjectName || '数学';
 const currentGrade = contextStore.grade || '七年级';
-const educationLevel = (currentGrade === 'junior' || currentGrade.includes('七') || currentGrade.includes('八') || currentGrade.includes('九')) ? '初中' : '高中';
 
 // --- 知识点树 ---
 const knowledgeTree = ref<KnowledgeNode[]>([]);
@@ -193,9 +192,20 @@ onMounted(async () => {
   // --- 调试日志（开发时使用，生产环境请删除） ---
   // 取消下面代码块的注释以查看详细调试信息
   /*
+  console.group('🔍 KnowledgeTree Debug');
+  console.log('currentSubject:', currentSubject);
+  console.log('currentGrade:', currentGrade);
+  console.log('educationLevel:', educationLevel);
+  console.log('getKnowledgeTree result:', getKnowledgeTree(currentSubject, educationLevel));
+  console.log('knowledgeTree.value:', knowledgeTree.value);
+  console.log('knowledgeTree.value length:', knowledgeTree.value.length);
+  console.groupEnd();
   */
-  // 即使获取题目失败，知识点筛选功能仍然可用
-}
+});
+    console.error('获取题目失败，但知识点筛选功能可用:', err);
+    // 即使获取题目失败，知识点筛选功能仍然可用
+    errorMsg.value = null; // 清除错误，让页面正常显示
+  }
 });
 </script>
 
