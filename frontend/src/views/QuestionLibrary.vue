@@ -22,7 +22,7 @@ if (!contextStore.grade || !contextStore.subject) {
 }
 
 const currentSubject = contextStore.subjectName || '数学';
-const currentGrade = contextStore.grade || '七年级';
+const currentLevel = contextStore.levelName || '初中'; // 学段名称：初中/高中
 
 // --- 知识点树 ---
 const knowledgeTree = ref<KnowledgeNode[]>([]);
@@ -41,36 +41,38 @@ const pageSize = ref(20);
 // --- 知识点统计 ---
 const knowledgeStats = computed(() => {
   const stats: Record<string, number> = {};
-  
+
   questions.value.forEach(q => {
-    if (q.topic) {
-      stats[q.topic] = (stats[q.topic] || 0) + 1;
+    if (q.topics && q.topics.length > 0) {
+      q.topics.forEach(topic => {
+        stats[topic] = (stats[topic] || 0) + 1;
+      });
     }
   });
-  
+
   return stats;
 });
 
 // --- 筛选后的题目列表 ---
 const filteredQuestions = computed(() => {
   let result = questions.value;
-  
+
   // 按知识点筛选
   if (selectedTopics.value.length > 0) {
-    result = result.filter(q => 
-      q.topic && selectedTopics.value.includes(q.topic)
+    result = result.filter(q =>
+      q.topics && q.topics.some(topic => selectedTopics.value.includes(topic))
     );
   }
-  
+
   // 按关键词搜索
   if (searchKeyword.value.trim()) {
     const keyword = searchKeyword.value.toLowerCase();
-    result = result.filter(q => 
-      (q.content && q.content.toLowerCase().includes(keyword)) ||
-      (q.topic && q.topic.toLowerCase().includes(keyword))
+    result = result.filter(q =>
+      (q.stem && q.stem.toLowerCase().includes(keyword)) ||
+      (q.topics && q.topics.some(topic => topic.toLowerCase().includes(keyword)))
     );
   }
-  
+
   return result;
 });
 
@@ -89,12 +91,13 @@ const totalPages = computed(() =>
 const fetchQuestions = async () => {
   isLoading.value = true;
   errorMsg.value = null;
-  
+
   try {
+    // 使用 education_level 参数（后端期望蛇形命名）
     const data = await questionApi.getList({
       subject: currentSubject,
-      grade: currentGrade
-    });
+      education_level: currentLevel
+    } as any);
     questions.value = data;
   } catch (err) {
     errorMsg.value = err instanceof Error ? err.message : '获取题目失败';
@@ -162,7 +165,7 @@ onMounted(() => {
     <aside class="w-[300px] bg-white border-r border-slate-200 flex flex-col flex-shrink-0">
       <div class="p-4 border-b border-slate-200">
         <h2 class="text-sm font-semibold text-slate-800">知识点筛选</h2>
-        <p class="text-xs text-slate-500 mt-1">{{ currentSubject }} · {{ currentGrade }}</p>
+        <p class="text-xs text-slate-500 mt-1">{{ currentSubject }} · {{ currentLevel }}</p>
       </div>
       
       <div class="flex-1 overflow-y-auto p-3">
@@ -306,17 +309,18 @@ onMounted(() => {
               <div class="flex-1">
                 <!-- 题目内容预览 -->
                 <div class="text-sm text-slate-800 line-clamp-2 mb-2">
-                  {{ question.content?.substring(0, 200) || '无内容' }}
-                  <span v-if="question.content && question.content.length > 200">...</span>
+                  {{ question.stem?.substring(0, 200) || '无内容' }}
+                  <span v-if="question.stem && question.stem.length > 200">...</span>
                 </div>
-                
+
                 <!-- 标签信息 -->
                 <div class="flex items-center gap-2 flex-wrap">
                   <span
-                    v-if="question.topic"
+                    v-for="topic in question.topics"
+                    :key="topic"
                     class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 text-xs font-medium"
                   >
-                    {{ question.topic }}
+                    {{ topic }}
                   </span>
                   <span
                     v-if="question.type"
