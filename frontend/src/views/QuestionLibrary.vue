@@ -164,13 +164,12 @@ const clearTopicFilter = () => {
 };
 
 // --- 初始化挂载 ---
-onMounted(() => {
-  // 加载知识点树
-  // 加载知识点树（需要学科和学段）
+onMounted(async () => {
+  // 1. 加载知识点树（从配置文件，不依赖后端）
   const educationLevel = currentGrade.includes('七') || currentGrade.includes('八') || currentGrade.includes('九') ? '初中' : '高中';
   knowledgeTree.value = getKnowledgeTree(currentSubject, educationLevel);
   
-  // 默认展开所有主分类和子分类
+  // 2. 默认展开所有主分类和子分类
   knowledgeTree.value.forEach(group => {
     expandedGroups.value.add(group.id);
     group.children?.forEach(subGroup => {
@@ -178,8 +177,14 @@ onMounted(() => {
     });
   });
   
-  // 获取题目列表
-  fetchQuestions();
+  // 3. 异步获取题目列表（不影响知识点显示）
+  try {
+    await fetchQuestions();
+  } catch (err) {
+    console.error('获取题目失败，但知识点筛选功能可用:', err);
+    // 即使获取题目失败，知识点筛选功能仍然可用
+    errorMsg.value = null; // 清除错误，让页面正常显示
+  }
 });
 </script>
 
