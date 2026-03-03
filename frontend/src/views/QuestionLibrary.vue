@@ -145,13 +145,7 @@ onMounted(() => {
   // 加载知识点树（需要学科和学段两个参数）
   knowledgeTree.value = getKnowledgeTree(currentSubject, currentLevel);
 
-  // 默认展开所有主分类和子分类
-  knowledgeTree.value.forEach(group => {
-    expandedGroups.value.add(group.id);
-    group.children?.forEach(subGroup => {
-      expandedSubGroups.value.add(`${group.id}-${subGroup.id}`);
-    });
-  });
+  // 默认不展开，用户点击后展开
 
   // 获取题目列表
   fetchQuestions();
