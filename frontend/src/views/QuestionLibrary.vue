@@ -287,40 +287,96 @@ onMounted(() => {
           <div
             v-for="question in paginatedQuestions"
             :key="question.id"
-            class="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition-shadow"
+            :class="[
+              'bg-white rounded-xl border p-4 hover:shadow-md transition-shadow',
+              question.status === 'error' ? 'border-red-300 bg-red-50/30' :
+              question.status === 'waste' ? 'border-slate-300 bg-slate-50/50' :
+              'border-slate-200'
+            ]"
           >
             <div class="flex items-start justify-between gap-4">
-              <div class="flex-1">
+              <div class="flex-1 min-w-0">
+                <!-- 顶部：题号 + 状态标签 -->
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="text-xs font-mono text-slate-400">#{{ question.questionNumber || '?' }}</span>
+                  <span
+                    v-if="question.status === 'error'"
+                    class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-700"
+                  >
+                    错误
+                  </span>
+                  <span
+                    v-if="question.status === 'waste'"
+                    class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200 text-slate-600"
+                  >
+                    废题
+                  </span>
+                  <span
+                    v-if="question.isAiOptimized"
+                    class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-700"
+                  >
+                    AI优化
+                  </span>
+                </div>
+
                 <!-- 题目内容预览 -->
-                <div class="text-sm text-slate-800 line-clamp-2 mb-2">
+                <div class="text-sm text-slate-800 line-clamp-2 mb-3">
                   {{ question.stem?.substring(0, 200) || '无内容' }}
                   <span v-if="question.stem && question.stem.length > 200">...</span>
                 </div>
 
-                <!-- 标签信息 -->
-                <div class="flex items-center gap-2 flex-wrap">
-                  <span
-                    v-for="topic in question.topics"
-                    :key="topic"
-                    class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 text-xs font-medium"
-                  >
-                    {{ topic }}
-                  </span>
+                <!-- 标签区：题型 + 难度 + 题类 + 知识点 -->
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <!-- 题型 -->
                   <span
                     v-if="question.type"
-                    class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-xs font-medium"
+                    class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 text-xs font-medium"
                   >
                     {{ question.type }}
                   </span>
+                  <!-- 难度 -->
                   <span
                     v-if="question.difficulty"
-                    class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 text-xs font-medium"
+                    :class="[
+                      'px-2 py-0.5 rounded-full text-xs font-medium',
+                      question.difficulty === 'easy' ? 'bg-green-50 text-green-600' :
+                      question.difficulty === 'medium' ? 'bg-amber-50 text-amber-600' :
+                      question.difficulty === 'hard' ? 'bg-orange-50 text-orange-600' :
+                      'bg-red-50 text-red-600'
+                    ]"
                   >
-                    {{ question.difficulty }}
+                    {{ question.difficulty === 'easy' ? '基础' : question.difficulty === 'medium' ? '中等' : question.difficulty === 'hard' ? '困难' : '挑战' }}
+                  </span>
+                  <!-- 题类 -->
+                  <span
+                    v-if="question.category"
+                    :class="[
+                      'px-2 py-0.5 rounded-full text-xs font-medium',
+                      question.category === '常考题' ? 'bg-indigo-50 text-indigo-600' :
+                      question.category === '易错题' ? 'bg-rose-50 text-rose-600' :
+                      question.category === '好题' ? 'bg-emerald-50 text-emerald-600' :
+                      question.category === '压轴题' ? 'bg-violet-50 text-violet-600' :
+                      'bg-sky-50 text-sky-600'
+                    ]"
+                  >
+                    {{ question.category }}
+                  </span>
+                  <!-- 知识点 -->
+                  <span
+                    v-for="topic in question.topics"
+                    :key="topic"
+                    class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs"
+                  >
+                    {{ topic }}
                   </span>
                 </div>
+
+                <!-- 来源信息 -->
+                <div v-if="question.source" class="mt-2 text-xs text-slate-400">
+                  来源: {{ question.source }}
+                </div>
               </div>
-              
+
               <!-- 操作按钮 -->
               <div class="flex items-center gap-2 flex-shrink-0">
                 <button
