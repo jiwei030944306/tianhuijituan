@@ -12,6 +12,7 @@ import { questionApi } from '@/api/question';
 import type { KnowledgeNode } from '@/components/common/KnowledgePointSelector.vue';
 import type { Question } from '@/types/question';
 import KnowledgeTreeSidebar from './QuestionLibrary/KnowledgeTreeSidebar.vue';
+import QuestionCard from './QuestionLibrary/QuestionCard.vue';
 
 // --- 环境校验逻辑 ---
 const router = useRouter();
@@ -41,6 +42,7 @@ const pageSize = ref(20);
 // --- 筛选条件 ---
 const selectedType = ref<string>('ALL');
 const selectedDifficulty = ref<string>('ALL');
+const selectedDuplicate = ref<string>('ALL');
 
 // 题型选项（根据学科动态生成）
 const typeOptions = computed(() => {
@@ -51,13 +53,21 @@ const typeOptions = computed(() => {
   ];
 });
 
-// 难度选项
+// 难度选项（5级难度，与后端数据库一致）
 const difficultyOptions = [
   { value: 'ALL', label: '全部难度' },
-  { value: 'easy', label: '基础' },
-  { value: 'medium', label: '中等' },
-  { value: 'hard', label: '困难' },
-  { value: 'challenge', label: '挑战' }
+  { value: 'easy', label: '易' },
+  { value: 'medium_easy', label: '较易' },
+  { value: 'medium', label: '中档' },
+  { value: 'medium_hard', label: '较难' },
+  { value: 'hard', label: '难' }
+];
+
+// 相似题筛选选项
+const duplicateOptions = [
+  { value: 'ALL', label: '全部试题' },
+  { value: 'duplicate', label: '相似题' },
+  { value: 'unique', label: '非重复' }
 ];
 
 // --- 知识点统计 ---
@@ -87,6 +97,13 @@ const filteredQuestions = computed(() => {
   // 按难度筛选
   if (selectedDifficulty.value !== 'ALL') {
     result = result.filter(q => q.difficulty === selectedDifficulty.value);
+  }
+
+  // 按相似题筛选
+  if (selectedDuplicate.value === 'duplicate') {
+    result = result.filter(q => q.isDuplicate === true);
+  } else if (selectedDuplicate.value === 'unique') {
+    result = result.filter(q => q.isDuplicate !== true);
   }
 
   // 按知识点筛选
@@ -170,6 +187,18 @@ const handleToggleSubGroup = (groupId: string, subGroupId: string) => {
 const clearTopicFilter = () => {
   selectedTopics.value = [];
   currentPage.value = 1;
+};
+
+// --- 删除相似题 ---
+const handleDeleteQuestion = async (questionId: string) => {
+  try {
+    await questionApi.delete(questionId);
+    // 从列表中移除
+    questions.value = questions.value.filter(q => q.id !== questionId);
+  } catch (err) {
+    console.error('删除失败:', err);
+    alert('删除失败，请重试');
+  }
 };
 
 // --- 初始化挂载 ---
@@ -279,6 +308,16 @@ onMounted(() => {
             </option>
           </select>
 
+          <!-- 相似题筛选 -->
+          <select
+            v-model="selectedDuplicate"
+            class="px-3 py-2 rounded-lg border border-slate-300 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+          >
+            <option v-for="opt in duplicateOptions" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </option>
+          </select>
+
           <!-- 已选知识点标签 -->
           <span
             v-if="selectedTopics.length > 0"
@@ -332,113 +371,12 @@ onMounted(() => {
         
         <!-- 题目列表 -->
         <div v-else class="space-y-3">
-          <div
+          <QuestionCard
             v-for="question in paginatedQuestions"
             :key="question.id"
-            :class="[
-              'bg-white rounded-xl border p-4 hover:shadow-md transition-shadow',
-              question.status === 'error' ? 'border-red-300 bg-red-50/30' :
-              question.status === 'waste' ? 'border-slate-300 bg-slate-50/50' :
-              'border-slate-200'
-            ]"
-          >
-            <div class="flex items-start justify-between gap-4">
-              <div class="flex-1 min-w-0">
-                <!-- 顶部：题号 + 状态标签 -->
-                <div class="flex items-center gap-2 mb-2">
-                  <span class="text-xs font-mono text-slate-400">#{{ question.questionNumber || '?' }}</span>
-                  <span
-                    v-if="question.status === 'error'"
-                    class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-700"
-                  >
-                    错误
-                  </span>
-                  <span
-                    v-if="question.status === 'waste'"
-                    class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200 text-slate-600"
-                  >
-                    废题
-                  </span>
-                  <span
-                    v-if="question.isAiOptimized"
-                    class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-700"
-                  >
-                    AI优化
-                  </span>
-                </div>
-
-                <!-- 题目内容预览 -->
-                <div class="text-sm text-slate-800 line-clamp-2 mb-3">
-                  {{ question.stem?.substring(0, 200) || '无内容' }}
-                  <span v-if="question.stem && question.stem.length > 200">...</span>
-                </div>
-
-                <!-- 标签区：题型 + 难度 + 题类 + 知识点 -->
-                <div class="flex items-center gap-1.5 flex-wrap">
-                  <!-- 题型 -->
-                  <span
-                    v-if="question.type"
-                    class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 text-xs font-medium"
-                  >
-                    {{ question.type }}
-                  </span>
-                  <!-- 难度 -->
-                  <span
-                    v-if="question.difficulty"
-                    :class="[
-                      'px-2 py-0.5 rounded-full text-xs font-medium',
-                      question.difficulty === 'easy' ? 'bg-green-50 text-green-600' :
-                      question.difficulty === 'medium' ? 'bg-amber-50 text-amber-600' :
-                      question.difficulty === 'hard' ? 'bg-orange-50 text-orange-600' :
-                      'bg-red-50 text-red-600'
-                    ]"
-                  >
-                    {{ question.difficulty === 'easy' ? '基础' : question.difficulty === 'medium' ? '中等' : question.difficulty === 'hard' ? '困难' : '挑战' }}
-                  </span>
-                  <!-- 题类 -->
-                  <span
-                    v-if="question.category"
-                    :class="[
-                      'px-2 py-0.5 rounded-full text-xs font-medium',
-                      question.category === '常考题' ? 'bg-indigo-50 text-indigo-600' :
-                      question.category === '易错题' ? 'bg-rose-50 text-rose-600' :
-                      question.category === '好题' ? 'bg-emerald-50 text-emerald-600' :
-                      question.category === '压轴题' ? 'bg-violet-50 text-violet-600' :
-                      'bg-sky-50 text-sky-600'
-                    ]"
-                  >
-                    {{ question.category }}
-                  </span>
-                  <!-- 知识点 -->
-                  <span
-                    v-for="topic in question.topics"
-                    :key="topic"
-                    class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs"
-                  >
-                    {{ topic }}
-                  </span>
-                </div>
-
-                <!-- 来源信息 -->
-                <div v-if="question.source" class="mt-2 text-xs text-slate-400">
-                  来源: {{ question.source }}
-                </div>
-              </div>
-
-              <!-- 操作按钮 -->
-              <div class="flex items-center gap-2 flex-shrink-0">
-                <button
-                  class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                  title="查看详情"
-                >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
+            :question="question"
+            @delete="handleDeleteQuestion"
+          />
           
           <!-- 分页器 -->
           <div v-if="totalPages > 1" class="flex items-center justify-center gap-2 pt-4">

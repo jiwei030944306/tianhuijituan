@@ -27,7 +27,7 @@ DB_CONFIG = {
     "dbname": os.environ.get("DB_NAME", "question_bank"),
     "user": os.environ.get("DB_USER", "postgres"),
     "password": os.environ.get("DB_PASSWORD", ""),  # 必须通过环境变量配置
-    "host": os.environ.get("DB_HOST", "localhost"),
+    "host": os.environ.get("DB_HOST", "127.0.0.1"),
     "port": os.environ.get("DB_PORT", "5432")
 }
 

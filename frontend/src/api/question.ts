@@ -63,8 +63,18 @@ export const questionApi = {
    */
   async getList(filters?: QuestionFilters): Promise<Question[]> {
     const source = createCancelToken('getList');
+    // 转换筛选参数格式
+    const params: Record<string, any> = {};
+    if (filters?.subject) params.subject = filters.subject;
+    if (filters?.grade) params.grade = filters.grade;
+    if (filters?.educationLevel) params.education_level = filters.educationLevel;
+    if (filters?.type) params.type = filters.type;
+    if (filters?.difficulty) params.difficulty = filters.difficulty;
+    if (filters?.status) params.status = filters.status;
+    if (filters?.isDuplicate !== undefined) params.is_duplicate = filters.isDuplicate;
+
     const response = await apiClient.get('/api/questions/', {
-      params: filters,
+      params,
       cancelToken: source.token
     });
     return response as Question[];

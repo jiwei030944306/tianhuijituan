@@ -20,8 +20,8 @@ class Settings(BaseSettings):
     
     # 数据库配置（从环境变量读取）
     DATABASE_URL: str
-    DATABASE_POOL_SIZE: int = 5  # 减少：开发环境 5 个连接足够
-    DATABASE_MAX_OVERFLOW: int = 5  # 减少：防止连接过多
+    DATABASE_POOL_SIZE: int = 10  # 优化：增加默认连接池大小
+    DATABASE_MAX_OVERFLOW: int = 20  # 优化：增加最大溢出连接数
     
     # CORS 配置（从环境变量读取）
     CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000"

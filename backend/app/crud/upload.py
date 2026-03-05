@@ -120,7 +120,7 @@ async def process_upload_folder(
                                     if q_type in type_stats:
                                         type_stats[q_type] += 1
                     except Exception as e:
-                        print(f"警告：无法解析 JSON 文件 {json_filename}: {e}")
+                        logger.warning(f"无法解析 JSON 文件 {json_filename}: {e}")
 
                 # 统计图片数量
                 images_dir = os.path.join(content_dir, 'images')

@@ -127,6 +127,11 @@ export interface Question {
   comment?: string;                     // 人工备注（纯备注，不混入错误信息）
   confirmedAt?: string;                 // 确认入库时间戳
 
+  // --- P2-5 相似题检测 ---
+  isDuplicate?: boolean;                // 是否为相似题
+  duplicateGroupId?: string;            // 相似题组ID
+  duplicateCheckedAt?: string;          // 相似度检测时间
+
   // --- 系统字段 ---
   version?: number;                     // 版本号（用于乐观锁）
 }
@@ -270,6 +275,7 @@ export interface QuestionFilters {
   hasImages?: boolean;                  // 是否有图片
   hasTopics?: boolean;                  // 是否有知识点
   isAiOptimized?: boolean;              // 是否经过AI优化
+  isDuplicate?: boolean;                // 是否为相似题筛选
   skip?: number;                        // 分页偏移
   limit?: number;                       // 分页数量
 }

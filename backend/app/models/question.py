@@ -1,7 +1,7 @@
 """
 题目数据模型
 """
-from sqlalchemy import Column, String, Integer, Text, DateTime, Index
+from sqlalchemy import Column, String, Integer, Text, DateTime, Index, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
@@ -40,6 +40,11 @@ class Question(Base):
     # 人工确认字段
     confirmed_at = Column(DateTime, comment="确认入库时间")
 
+    # 相似题检测字段
+    is_duplicate = Column(Boolean, default=False, comment="是否为相似题")
+    duplicate_group_id = Column(String(50), comment="相似题组ID")
+    duplicate_checked_at = Column(DateTime, comment="相似度检测时间")
+
     # 分类信息字段
     subject = Column(String(20), comment="科目：数学、语文、英语等")
     grade = Column(Integer, comment="年级：7-12")
@@ -66,6 +71,9 @@ class Question(Base):
         Index('idx_questions_source', 'source'),
         Index('idx_questions_created_at', 'created_at'),
         Index('idx_questions_updated_at', 'updated_at'),
+        # 相似题筛选索引
+        Index('idx_questions_is_duplicate', 'is_duplicate'),
+        Index('idx_questions_duplicate_group_id', 'duplicate_group_id'),
     )
 
     def __repr__(self):

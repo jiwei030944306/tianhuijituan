@@ -2,10 +2,18 @@
 FastAPI应用入口
 """
 import os
+import logging
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # 创建FastAPI应用
 app = FastAPI(
@@ -81,15 +89,18 @@ async def root():
         "docs": "/docs"
     }
 
+
 # 健康检查
 @app.get("/health")
 async def health_check():
     """
     健康检查
 
-    返回系统状态和数据库连接池信息
+    返回系统状态和数据库连接信息
+    执行实际数据库查询验证连接有效性
     """
-    from app.core.database import engine
+    from app.core.database import engine, check_database_connection
+    from sqlalchemy import text
 
     # 获取连接池状态
     pool_status = {
@@ -100,13 +111,59 @@ async def health_check():
         "total_connections": engine.pool.size() + engine.pool.overflow()
     }
 
+    # 执行实际数据库查询验证连接
+    is_connected, message = await check_database_connection(max_retries=1)
+
     return {
-        "status": "healthy",
+        "status": "healthy" if is_connected else "unhealthy",
         "database": {
-            "connected": True,
+            "connected": is_connected,
+            "message": message,
             "pool": pool_status
         }
     }
+
+
+@app.on_event("startup")
+async def startup_event():
+    """
+    应用启动事件
+
+    初始化数据库连接并验证
+    """
+    logger.info("🚀 应用启动中...")
+
+    from app.core.database import init_database_connection
+    from app.core.cache import init_cache
+
+    # 初始化数据库连接
+    await init_database_connection()
+
+    # 初始化缓存（Redis 或内存缓存）
+    await init_cache()
+
+    logger.info("✓ 应用启动完成")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """
+    应用关闭事件
+
+    清理数据库连接池和缓存
+    """
+    logger.info("🔒 应用关闭中...")
+
+    from app.core.database import engine
+    from app.core.cache import close_cache
+
+    # 关闭缓存连接
+    await close_cache()
+
+    # 关闭数据库连接池
+    await engine.dispose()
+
+    logger.info("✓ 资源清理完成")
 
 if __name__ == "__main__":
     import uvicorn
