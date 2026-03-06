@@ -62,6 +62,7 @@ async def get_questions(
     subject: Optional[str] = Query(None, description="科目"),
     grade: Optional[int] = Query(None, description="年级"),
     education_level: Optional[str] = Query(None, description="学段"),
+    is_duplicate: Optional[bool] = Query(None, description="是否为相似题"),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -72,7 +73,7 @@ async def get_questions(
     """
     questions = await crud_question.get_questions(
         db, skip=skip, limit=limit, type=type, difficulty=difficulty, status=status,
-        subject=subject, grade=grade, education_level=education_level
+        subject=subject, grade=grade, education_level=education_level, is_duplicate=is_duplicate
     )
 
     # 转换为驼峰命名
@@ -110,6 +111,10 @@ async def get_questions(
             "confirmedAt": q.confirmed_at.isoformat() if q.confirmed_at else None,
             "createdAt": q.created_at.isoformat() if q.created_at else None,
             "updatedAt": q.updated_at.isoformat() if q.updated_at else None,
+            # 相似题字段
+            "isDuplicate": q.is_duplicate,
+            "duplicateGroupId": q.duplicate_group_id,
+            "duplicateCheckedAt": q.duplicate_checked_at.isoformat() if q.duplicate_checked_at else None,
         }
 
     return [to_camel_case(q) for q in questions]
@@ -301,9 +306,7 @@ async def check_conflict(
             }
             
     except Exception as e:
-        print(f"DEBUG: Conflict check failed: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"冲突检测失败: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"冲突检测失败: {str(e)}")
 
 
@@ -436,9 +439,7 @@ async def get_batch_image(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"DEBUG: Get batch image failed: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"获取图片失败: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"获取图片失败: {str(e)}")
 
 
@@ -539,6 +540,7 @@ async def bulk_update_questions(
         raise HTTPException(status_code=500, detail=f"批量更新失败: {str(e)}")
 
 
+@router.delete("/batch/{batch_id}", status_code=204)
 async def delete_batch(
     batch_id: str,
     db: AsyncSession = Depends(get_db)
@@ -582,7 +584,5 @@ async def delete_batch(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"DEBUG: Delete batch failed: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"删除批次失败: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"删除批次失败: {str(e)}")

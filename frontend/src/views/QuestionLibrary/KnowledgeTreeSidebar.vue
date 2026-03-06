@@ -54,37 +54,38 @@ const emit = defineEmits<Emits>();
 // 构建树形结构
 const knowledgeGroups = computed<KnowledgeGroup[]>(() => {
   const tree = props.knowledgeTree;
-  
+
   const buildSubGroup = (nodes: KnowledgeNode[], parentId: string): KnowledgeSubGroup[] => {
     return nodes.map(node => {
+      const subGroupKey = `${parentId}-${node.id}`;
       const leaves = node.children ? node.children.map(leaf => ({
         id: leaf.id,
         name: leaf.name,
         count: props.knowledgeStats[leaf.name] || 0,
         selected: props.selectedTopics.includes(leaf.name)
       })) : [];
-      
+
       const total = leaves.reduce((sum, leaf) => sum + leaf.count, 0);
-      
+
       return {
         id: node.id,
         name: node.name,
         count: total,
-        expanded: true,
+        expanded: props.expandedSubGroups.has(subGroupKey),  // 响应 Set 变化
         children: leaves
       };
     });
   };
-  
+
   return tree.map(node => {
     const subGroups = node.children ? buildSubGroup(node.children, node.id) : [];
     const total = subGroups.reduce((sum, sg) => sum + sg.count, 0);
-    
+
     return {
       id: node.id,
       name: node.name,
       count: total,
-      expanded: true,
+      expanded: props.expandedGroups.has(node.id),  // 响应 Set 变化
       children: subGroups
     };
   });

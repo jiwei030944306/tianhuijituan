@@ -28,7 +28,8 @@ async def get_questions(
     status: Optional[str] = None,
     subject: Optional[str] = None,
     grade: Optional[int] = None,
-    education_level: Optional[str] = None
+    education_level: Optional[str] = None,
+    is_duplicate: Optional[bool] = None
 ) -> List[Question]:
     """
     获取题目列表
@@ -48,6 +49,10 @@ async def get_questions(
         query = query.where(Question.grade == grade)
     if education_level and education_level != "ALL":
         query = query.where(Question.education_level == education_level)
+
+    # 相似题筛选
+    if is_duplicate is not None:
+        query = query.where(Question.is_duplicate == is_duplicate)
 
     query = query.offset(skip).limit(limit)
     result = await db.execute(query)

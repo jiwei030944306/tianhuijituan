@@ -120,7 +120,7 @@ async def process_upload_folder(
                                     if q_type in type_stats:
                                         type_stats[q_type] += 1
                     except Exception as e:
-                        print(f"警告：无法解析 JSON 文件 {json_filename}: {e}")
+                        logger.warning(f"无法解析 JSON 文件 {json_filename}: {e}")
 
                 # 统计图片数量
                 images_dir = os.path.join(content_dir, 'images')
@@ -133,7 +133,20 @@ async def process_upload_folder(
             with open(json_path, 'wb') as f:
                 f.write(zip_content)
             try:
-                questions_data = json.loads(zip_content.decode('utf-8'))
+                # 尝试多种编码方式解码
+                decoded_content = None
+                for encoding in ['utf-8', 'utf-8-sig', 'gbk', 'gb2312', 'latin-1']:
+                    try:
+                        decoded_content = zip_content.decode(encoding)
+                        logger.info(f"成功使用 {encoding} 编码解码文件")
+                        break
+                    except UnicodeDecodeError:
+                        continue
+
+                if decoded_content is None:
+                    raise ValueError("无法解码文件内容，请确保文件使用 UTF-8 或 GBK 编码")
+
+                questions_data = json.loads(decoded_content)
                 if isinstance(questions_data, list):
                     question_count = len(questions_data)
                     

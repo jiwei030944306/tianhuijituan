@@ -12,10 +12,10 @@ from pathlib import Path
 # 添加项目路径
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from backend.app.core.database import Base
-from backend.app.models.question import Question  # noqa
-from backend.app.models.upload_record import UploadRecord  # noqa
-from backend.app.models.user import User  # noqa
+from app.core.database import Base
+from app.models.question import Question  # noqa
+from app.models.upload_record import UploadRecord  # noqa
+from app.models.user import User  # noqa
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

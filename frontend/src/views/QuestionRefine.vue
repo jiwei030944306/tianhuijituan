@@ -153,10 +153,9 @@ const fileStats = computed<FileStats | null>(() => {
 const filteredTableData = computed(() => {
   const result = displayQuestions.value.filter(q => {
     const lowerKey = filters.value.keyword.toLowerCase();
-    const idStr = String(q.id || '');
     const matchKeyword = !filters.value.keyword ||
-                         idStr.toLowerCase().includes(lowerKey) ||
-                         (q.stem && q.stem.toLowerCase().includes(lowerKey));
+                         q.id.toLowerCase().includes(lowerKey) ||
+                         q.stem.toLowerCase().includes(lowerKey);
 
     const matchType = filters.value.type === 'ALL' || q.type === filters.value.type;
     const matchDiff = filters.value.difficulty === 'ALL' || q.difficulty === filters.value.difficulty;
@@ -213,11 +212,15 @@ const suggestedTags = computed(() => {
 
 // --- 业务方法区 ---
 
-// 获取上传批次列表（从文件系统读取）
-const fetchUploadHistory = async () => {
+// 获取上传批次历史
+const fetchBatchList = async () => {
   isLoading.value = true;
   errorMsg.value = null;
   try {
+    if (!folderCode) {
+      errorMsg.value = '环境信息不完整，请重新选择学科学段';
+      return;
+    }
     const response = await fetch(`/api/questions/upload-history?folder_code=${folderCode}`);
     if (!response.ok) throw new Error('获取批次列表失败');
     const data = await response.json();
@@ -232,52 +235,6 @@ const fetchUploadHistory = async () => {
   }
 };
 
-// 获取所有试题（直接读取数据库）
-const fetchAllQuestions = async () => {
-  isLoading.value = true;
-  errorMsg.value = null;
-  try {
-    // 从文件系统读取当前批次的题目
-    if (selectedFile.value) {
-      const response = await fetch(`/api/questions/batch/${selectedFile.value}?folder_code=${folderCode}`);
-      if (!response.ok) throw new Error('获取题目失败');
-      const data = await response.json();
-      displayQuestions.value = data.questions || [];
-    } else {
-      displayQuestions.value = [];
-    }
-    resetFilters();
-  } catch (error: any) {
-    errorMsg.value = error.message || '获取试题失败';
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-
-// REPLACED
-// REPLACED
-// REPLACED
-// REPLACED
-// REPLACED
-// REPLACED
-// REPLACED
-// REPLACED
-// REPLACED
-// REPLACED
-// REPLACED
-// REPLACED
-// REPLACED
-// REPLACED
-// REPLACED
-// REPLACED
-// REPLACED
-// REPLACED
-// REPLACED
-// REPLACED
-// REPLACED
-// REPLACED
-
 // 3. 核心代码强调：批次详情加载 (Batch Detail Loader)
 // 加载选中批次下的所有题目详情，并自动重置筛选器
 const fetchBatchQuestions = async (batchId: string) => {
@@ -286,6 +243,10 @@ const fetchBatchQuestions = async (batchId: string) => {
   errorMsg.value = null;
   displayQuestions.value = [];
   try {
+    if (!folderCode) {
+      errorMsg.value = '环境信息不完整，请重新选择学科学段';
+      return;
+    }
     const response = await fetch(`/api/questions/batch/${batchId}?folder_code=${folderCode}`);
     if (!response.ok) throw new Error('获取题目失败');
     const data = await response.json();
@@ -407,7 +368,7 @@ watch(selectedFile, (newFile) => {
 
 // --- 初始化挂载 ---
 onMounted(() => {
-  fetchUploadHistory();
+  fetchBatchList();
 });
 </script>
 

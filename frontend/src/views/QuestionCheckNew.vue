@@ -352,6 +352,10 @@ const fetchBatchQuestions = async (batchId: string) => {
   displayQuestions.value = [];
   try {
     const folderCode = contextStore.folderCode;
+    if (!folderCode) {
+      errorMsg.value = '环境信息不完整，请重新选择学科学段';
+      return;
+    }
     const response = await fetch(`/api/questions/batch/${batchId}?folder_code=${folderCode}`);
     if (!response.ok) throw new Error('获取题目失败');
     const data = await response.json();
