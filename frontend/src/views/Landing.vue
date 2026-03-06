@@ -320,7 +320,7 @@ const onNavigate = (view: string) => {
   } else if (view === 'DOCS') {
     console.warn('DOCS module not implemented');
   } else if (view === 'DB_EXPLORER') {
-    console.warn('DB_EXPLORER module not implemented');
+    router.push('/db-explorer');
   }
 };
 

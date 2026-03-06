@@ -10,19 +10,23 @@ import json
 
 # ==================== 值域枚举定义 ====================
 
-class QuestionType(str, Enum):
-    """题目类型枚举"""
-    SINGLE_CHOICE = "single_choice"
-    MULTIPLE_CHOICE = "multiple_choice"
-    TRUE_FALSE = "true_false"
-    FILL_BLANK = "fill_blank"
-    SHORT_ANSWER = "short_answer"
-    CALCULATION = "calculation"
-    PROOF = "proof"
-    APPLICATION = "application"
-    READING = "reading"
-    WRITING = "writing"
-    LISTENING = "listening"
+class QuestionType(int, Enum):
+    """题目类型枚举（数字值）"""
+    SINGLE_CHOICE = 1      # 选择题
+    FILL_BLANK = 2         # 填空题
+    MULTIPLE_CHOICE = 3    # 多选题
+    TRUE_FALSE = 4         # 判断题
+    SHORT_ANSWER = 9       # 解答题
+
+
+# 题型中文映射
+QUESTION_TYPE_LABELS = {
+    1: '选择题',
+    2: '填空题',
+    3: '多选题',
+    4: '判断题',
+    9: '解答题',
+}
 
 
 class Difficulty(str, Enum):

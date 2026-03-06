@@ -84,6 +84,12 @@ const routes: RouteRecordRaw[] = [
     name: 'SystemMonitor',
     component: () => import('@/views/SystemMonitor/index.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/db-explorer',
+    name: 'DbExplorer',
+    component: () => import('@/views/DbExplorer.vue'),
+    meta: { hideNavbar: false, requiresAuth: true, skipContext: true }
   }
 ];
 
@@ -106,10 +112,9 @@ router.beforeEach((to, from, next) => {
     }
 
     // 2. 检查是否选择了环境（学段/学科）
+    // 跳过标记了 skipContext 的页面（如 DbExplorer）
     // 排除 Landing 页面本身，防止死循环
-    // Home 页及其他业务页面必须有 context (grade & subject)
-    // 注意：Store 中使用的是 grade 字段，而不是 level
-    if (to.path !== '/landing' && (!contextStore.grade || !contextStore.subject)) {
+    if (!to.meta.skipContext && to.path !== '/landing' && (!contextStore.grade || !contextStore.subject)) {
       // 虽然登录了，但没有选择学段和学科，强制跳转回 Landing 选择
       console.warn('Router Guard: Context not set (grade/subject missing), redirecting to Landing');
       next('/landing');

@@ -138,126 +138,87 @@ export interface Question {
 
 // ==================== 题型配置（按学段+学科分） ====================
 
-export const QUESTION_TYPES: Record<EducationLevel, Record<string, string[]>> = {
+// 题型值定义（数字）
+export const QUESTION_TYPE_VALUES = {
+  SINGLE_CHOICE: 1,      // 选择题
+  FILL_BLANK: 2,         // 填空题
+  MULTIPLE_CHOICE: 3,    // 多选题
+  TRUE_FALSE: 4,         // 判断题
+  SHORT_ANSWER: 9,       // 解答题
+} as const;
+
+// 题型值 -> 中文映射
+export const QUESTION_TYPE_LABELS: Record<number, string> = {
+  1: '选择题',
+  2: '填空题',
+  3: '多选题',
+  4: '判断题',
+  9: '解答题',
+};
+
+// 题型选项列表（用于下拉选择）
+export const QUESTION_TYPE_OPTIONS = [
+  { value: 1, label: '选择题' },
+  { value: 2, label: '填空题' },
+  { value: 3, label: '多选题' },
+  { value: 4, label: '判断题' },
+  { value: 9, label: '解答题' },
+];
+
+// 题型配置（按学段+学科分，值为数字）
+export const QUESTION_TYPES: Record<EducationLevel, Record<string, number[]>> = {
   '初中': {
-    '数学': ['选择题', '多选题', '填空题', '解答题', '判断题'],
-    '语文': ['选择题', '填空题', '多选题', '汉字书写', '解答题', '翻译', '基础知识', '默写', '语言运用', '综合读写', '名著阅读', '现代文阅读', '古诗词赏析', '文言文阅读', '作文', '综合性学习'],
-    '英语': ['听力题', '选择题', '填空题', '完形填空', '阅读理解', '信息匹配', '选词填空', '短文填空', '语法填空', '其他阅读题型', '对话填空', '单词拼写', '词性转换', '句型转换', '句子改错', '完成句子', '翻译题', '短文改错', '书面表达', '词汇应用', '解答题'],
-    '物理': ['选择题', '多选题', '填空题', '选择说明题', '判断题', '作图题', '简答题', '实验探究题', '解答题', '计算题', '综合能力题', '科普阅读题'],
-    '化学': ['选择题', '多选题', '选择填充题', '判断题', '填空题', '实验题', '推断题', '工艺流程题', '科普阅读题', '科学探究题', '综合应用题', '解答题', '计算题'],
-    '生物': ['选择题', '多选题', '判断题', '填空题', '实验探究题', '解答题', '材料分析题'],
-    '历史': ['选择题', '填空题', '多选题', '辨析题', '材料题', '解答题', '判断题', '论述题'],
-    '地理': ['选择题', '多选题', '判断题', '填空题', '连线题', '解答题'],
-    '道德与法治': ['选择题', '填空题', '多选题', '判断题', '简答题', '辨析题', '评析题', '阐述见解题', '材料分析题', '判断说理题', '情境探究题', '分析说明题', '综合探究题'],
+    '数学': [1, 3, 2, 9, 4],           // 选择题、多选题、填空题、解答题、判断题
+    '语文': [1, 2, 3, 4, 9],           // 待完善
+    '英语': [1, 2, 3, 4, 9],           // 待完善
+    '物理': [1, 3, 2, 4, 9],           // 待完善
+    '化学': [1, 3, 2, 4, 9],           // 待完善
+    '生物': [1, 3, 2, 4, 9],           // 待完善
+    '历史': [1, 2, 3, 4, 9],           // 待完善
+    '地理': [1, 3, 4, 2, 9],           // 待完善
+    '道德与法治': [1, 2, 3, 4, 9],     // 待完善
   },
   '高中': {
-    '语文': ['选择题', '多选题', '填空题', '解答题', '判断题'],
-    '数学': ['选择题', '多选题', '填空题', '解答题', '判断题'],
-    '英语': ['听力题', '选择题', '填空题', '完形填空', '阅读理解', '信息匹配', '选词填空', '短文填空', '语法填空', '其他阅读题型', '对话填空', '单词拼写', '词性转换', '句型转换', '句子改错', '完成句子', '翻译题', '短文改错', '书面表达', '词汇应用', '解答题'],
-    '物理': ['选择题', '多选题', '填空题', '判断题', '作图题', '实验题', '解答题'],
-    '化学': ['选择题', '填空题', '多选题', '判断题', '实验题', '计算题', '推断题', '解答题', '工艺流程题'],
-    '生物': ['选择题', '填空题', '多选题', '材料题', '判断题', '解答题', '论述题'],
-    '历史': ['选择题', '填空题', '多选题', '材料题', '判断题', '解答题', '论述题'],
-    '地理': ['选择题', '填空题', '多选题', '判断题', '解答题'],
-    '政治': ['选择题', '填空题', '多选题', '辨析评析题', '判断题', '材料题', '解答题', '论述题', '图表题', '探究类试题', '简答题'],
+    '数学': [1, 3, 2, 9, 4],           // 选择题、多选题、填空题、解答题、判断题
+    '语文': [1, 3, 2, 9, 4],           // 待完善
+    '英语': [1, 2, 3, 4, 9],           // 待完善
+    '物理': [1, 3, 2, 4, 9],           // 待完善
+    '化学': [1, 2, 3, 4, 9],           // 待完善
+    '生物': [1, 2, 3, 4, 9],           // 待完善
+    '历史': [1, 2, 3, 4, 9],           // 待完善
+    '地理': [1, 2, 3, 4, 9],           // 待完善
+    '政治': [1, 2, 3, 4, 9],           // 待完善
   },
 };
 
 // 题类选项列表
 export const CATEGORY_OPTIONS: QuestionCategory[] = ['常考题', '易错题', '好题', '压轴题', '优选题'];
 
-// ==================== 题型英文映射（AI返回标准）====================
+// ==================== 题型工具函数 ====================
 
-// 中文题型 -> 英文标识符（AI 返回此值）
-export const QUESTION_TYPE_TO_ENGLISH: Record<string, string> = {
-  // 通用题型
-  '选择题': 'single_choice',
-  '多选题': 'multiple_choice',
-  '填空题': 'basic_fill',  // 统一使用名词 + _fill 风格，与其他填空类题型保持一致
-  '解答题': 'subjective',
-  '判断题': 'true_false',
-  '解答题': 'subjective',
-  '判断题': 'true_false',
+/**
+ * 获取题型中文名称
+ * @param typeValue 题型数字值
+ * @returns 中文名称
+ */
+export function getTypeLabel(typeValue: number | string | undefined): string {
+  if (typeValue === undefined || typeValue === null) return '未知';
+  return QUESTION_TYPE_LABELS[Number(typeValue)] || '未知';
+}
 
-  // 语文特有
-  '汉字书写': 'character_writing',
-  '翻译': 'translation',
-  '基础知识': 'basic_knowledge',
-  '默写': 'dictation',
-  '语言运用': 'language_usage',
-  '综合读写': 'reading_writing',
-  '名著阅读': 'classic_reading',
-  '现代文阅读': 'modern_reading',
-  '古诗词赏析': 'poetry_appreciation',
-  '文言文阅读': 'classical_chinese',
-  '作文': 'composition',
-  '综合性学习': 'integrated_learning',
-
-  // 数学特有
-  '计算题': 'calculation',
-
-  // 英语特有
-  '听力题': 'listening',
-  '完形填空': 'cloze',
-  '阅读理解': 'reading_comprehension',
-  '信息匹配': 'information_matching',
-  '选词填空': 'word_selection',
-  '短文填空': 'passage_fill',
-  '语法填空': 'grammar_fill',
-  '其他阅读题型': 'other_reading',
-  '对话填空': 'dialogue_fill',
-  '单词拼写': 'spelling',
-  '词性转换': 'word_formation',
-  '句型转换': 'sentence_transformation',
-  '句子改错': 'error_correction',
-  '完成句子': 'sentence_completion',
-  '短文改错': 'passage_correction',
-  '书面表达': 'writing',
-  '词汇应用': 'vocabulary_usage',
-
-  // 物理特有
-  '选择说明题': 'choice_explanation',
-  '作图题': 'drawing',
-  '简答题': 'short_answer',
-  '实验探究题': 'experiment_inquiry',
-  '综合能力题': 'comprehensive',
-  '科普阅读题': 'science_reading',
-
-  // 化学特有
-  '选择填充题': 'choice_fill',
-  '实验题': 'experiment',
-  '推断题': 'deduction',
-  '工艺流程题': 'process_flow',
-  '科学探究题': 'science_inquiry',
-  '综合应用题': 'comprehensive_application',
-
-  // 生物特有
-  '材料分析题': 'material_analysis',
-
-  // 历史特有
-  '辨析题': 'analysis',
-  '材料题': 'material',
-  '论述题': 'essay',
-
-  // 地理特有
-  '连线题': 'matching',
-
-  // 政治/道德与法治特有
-  '评析题': 'evaluation',
-  '阐述见解题': 'opinion',
-  '判断说理题': 'reasoning',
-  '情境探究题': 'scenario_inquiry',
-  '分析说明题': 'explanation',
-  '综合探究题': 'comprehensive_inquiry',
-  '辨析评析题': 'analysis_evaluation',
-  '图表题': 'chart',
-  '探究类试题': 'inquiry',
-};
-
-// 英文标识符 -> 中文显示（前端显示用）
-export const QUESTION_TYPE_TO_CHINESE: Record<string, string> = Object.fromEntries(
-  Object.entries(QUESTION_TYPE_TO_ENGLISH).map(([cn, en]) => [en, cn])
-);
+/**
+ * 根据学科和学段获取题型选项列表
+ * @param subject 学科名称
+ * @param level 学段
+ * @returns 题型选项列表
+ */
+export function getTypeOptions(subject: string, level: EducationLevel = '初中'): { value: number; label: string }[] {
+  const typeValues = QUESTION_TYPES[level]?.[subject] || [];
+  return typeValues.map(value => ({
+    value,
+    label: QUESTION_TYPE_LABELS[value] || '未知'
+  }));
+}
 
 // ==================== 辅助类型 ====================
 
@@ -346,8 +307,8 @@ export function getGradesByLevel(level: EducationLevel): number[] {
   return level === '初中' ? [7, 8, 9] : [10, 11, 12];
 }
 
-// 根据学段+学科获取可用题型列表
-export function getTypesBySubject(subject: string, level: EducationLevel = '初中'): string[] {
+// 根据学段+学科获取可用题型列表（返回数字值）
+export function getTypesBySubject(subject: string, level: EducationLevel = '初中'): number[] {
   return QUESTION_TYPES[level]?.[subject] || [];
 }
 
@@ -359,32 +320,29 @@ export function getSubjectsByLevel(level: EducationLevel): string[] {
 // ==================== 题型映射工具函数 ====================
 
 /**
- * 中文题型转英文
- * @param chineseType 中文题型名称
- * @returns 英文标识符
+ * 获取题型标签（已弃用，请使用 getTypeLabel）
+ * @deprecated 使用 getTypeLabel 代替
  */
 export function getEnglishTypeName(chineseType: string): string | undefined {
-  return QUESTION_TYPE_TO_ENGLISH[chineseType];
+  console.warn('getEnglishTypeName is deprecated, type values are now numbers');
+  return undefined;
 }
 
 /**
- * 英文题型转中文
- * @param englishType 英文标识符
- * @returns 中文题型名称
+ * 获取题型中文名称（已弃用，请使用 getTypeLabel）
+ * @deprecated 使用 getTypeLabel 代替
  */
 export function getChineseTypeName(englishType: string): string | undefined {
-  return QUESTION_TYPE_TO_CHINESE[englishType];
+  console.warn('getChineseTypeName is deprecated, use getTypeLabel instead');
+  return getTypeLabel(englishType);
 }
 
 /**
- * 根据学科和学段获取英文题型列表
- * @param subject 学科名称（中文）
- * @param level 学段
- * @returns 英文题型标识符列表
+ * 根据学科和学段获取题型列表（已弃用，请使用 getTypeOptions）
+ * @deprecated 使用 getTypeOptions 代替
  */
-export function getTypesBySubjectEnglish(subject: string, level: EducationLevel = '初中'): string[] {
-  const chineseTypes = QUESTION_TYPES[level]?.[subject] || [];
-  return chineseTypes.map(cn => QUESTION_TYPE_TO_ENGLISH[cn] || cn);
+export function getTypesBySubjectEnglish(subject: string, level: EducationLevel = '初中'): number[] {
+  return QUESTION_TYPES[level]?.[subject] || [];
 }
 
 

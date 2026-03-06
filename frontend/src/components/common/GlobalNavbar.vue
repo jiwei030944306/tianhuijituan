@@ -48,6 +48,7 @@ const pageTitleMap: PageTitleMap = {
   '/library': '题库管理',
   '/monitor': '流转监控',
   '/logs': '日志反馈',
+  '/db-explorer': '底层数据管理',
   '/': '智研题库云系统'  // 默认标题
 };
 
@@ -87,11 +88,21 @@ const shouldShowModuleNav = computed(() => {
 
 // --- 3. 核心代码强调：一级导航内容动态计算 ---
 // 根据用户登录状态和学科学段选择状态，动态调整左侧导航内容
-// 逻辑优先级：未登录 > 已登录未选学科 > 已登录已选学科
+// 逻辑优先级：未登录 > 已登录未选学科 > 已登录已选学科 > skipContext页面
 const primaryNavContent = computed(() => {
   if (isLandingPage.value) {
     return {
       show: false
+    };
+  }
+
+  // skipContext 页面（如 DbExplorer）显示全局工具模式
+  if (route.meta.skipContext) {
+    return {
+      show: true,
+      text: '全局工具',
+      icon: Grid,
+      mode: 'global-tool'
     };
   }
 
@@ -206,6 +217,14 @@ const handleLogout = () => {
           >
             <SwitchButton class="w-3.5 h-3.5" />
           </button>
+        </template>
+
+        <!-- 模式: 全局工具页面（skipContext） -->
+        <template v-else-if="primaryNavContent.mode === 'global-tool'">
+          <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg">
+            <Grid class="w-4 h-4 text-slate-500" />
+            <span class="font-bold text-sm text-slate-600">全局工具</span>
+          </div>
         </template>
 
         <!-- 3. 核心代码强调：模式2 - 已登录但未选择学科学段 -->
