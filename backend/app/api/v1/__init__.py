@@ -8,6 +8,7 @@ from fastapi import APIRouter
 from app.api.v1 import (
     auth,
     base,
+    db_explorer,
     images,
     logs,
     monitor,
@@ -59,4 +60,10 @@ api_v1_router.include_router(
     monitor.router,
     prefix="/monitor",
     tags=["系统监控"]
+)
+
+api_v1_router.include_router(
+    db_explorer.router,
+    prefix="/db-explorer",
+    tags=["数据库查询"]
 )

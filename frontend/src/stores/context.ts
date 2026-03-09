@@ -2,51 +2,30 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 
 // 学科名称映射（英文代码 -> 中文名）
+// 初中代码和高中代码(带2)映射到同一中文名
 const SUBJECT_NAMES: Record<string, string> = {
-  chinese: '语文',
-  math: '数学',
-  english: '英语',
-  physics: '物理',
-  chemistry: '化学',
-  biology: '生物',
-  geography: '地理',
-  politics: '道德与法治',
-  technology: '通用技术',
+  chinese: '语文', chinese2: '语文',
+  math: '数学', math2: '数学',
+  english: '英语', english2: '英语',
+  physics: '物理', physics2: '物理',
+  chemistry: '化学', chemistry2: '化学',
+  bio: '生物', bio2: '生物',
+  geo: '地理', geo2: '地理',
+  history: '历史', history2: '历史',
+  politics: '政治', politics2: '政治',
 };
 
-// 反向映射：中文名 -> 英文代码
+// 反向映射：中文名 -> 初中英文代码（默认）
 const SUBJECT_CODES: Record<string, string> = {
   '语文': 'chinese',
   '数学': 'math',
   '英语': 'english',
   '物理': 'physics',
   '化学': 'chemistry',
-  '生物': 'biology',
-  '地理': 'geography',
-  '道德与法治': 'politics',
-  '通用技术': 'technology',
-};
-
-// 学科学段短代码映射表
-const FOLDER_CODE_MAP: Record<string, string> = {
-  // 高中
-  '高中-chinese': 'h8c3n4',
-  '高中-math': 'h7s9m2',
-  '高中-english': 'h9e5n1',
-  '高中-physics': 'h1p8h2',
-  '高中-chemistry': 'h2c7h3',
-  '高中-biology': 'h3b6h4',
-  '高中-geography': 'h5g4h6',
-  '高中-technology': 'h6t3h7',
-  // 初中
-  '初中-chinese': 'm8c3n4',
-  '初中-math': 'm7s9m2',
-  '初中-english': 'm9e5n1',
-  '初中-physics': 'm1p8h2',
-  '初中-chemistry': 'm2c7h3',
-  '初中-biology': 'm3b6h4',
-  '初中-geography': 'm5g4h6',
-  '初中-politics': 'm6p3h7',
+  '生物': 'bio',
+  '地理': 'geo',
+  '历史': 'history',
+  '政治': 'politics',
 };
 
 export const useContextStore = defineStore('context', () => {
@@ -74,20 +53,21 @@ export const useContextStore = defineStore('context', () => {
   // Actions
   function setContext(newGrade: 'junior' | 'senior', newSubject: string) {
     grade.value = newGrade;
-    
-    // 转换中文科目名为英文代码（如果传入的是中文）
-    const subjectCode = SUBJECT_CODES[newSubject] || newSubject;
+
+    // 转换中文科目名为英文基础代码（如果传入的是中文）
+    const baseCode = SUBJECT_CODES[newSubject] || newSubject;
+
+    // 根据学段生成完整代码：高中加2，初中不加
+    const subjectCode = newGrade === 'senior' ? `${baseCode}2` : baseCode;
     subject.value = subjectCode;
-    
-    // 生成folder_code（必须使用英文代码查找）
-    const level = newGrade === 'senior' ? '高中' : '初中';
-    const key = `${level}-${subjectCode}`;
-    folderCode.value = FOLDER_CODE_MAP[key] || generateRandomCode(6);
-    
-    // 持久化(保存英文代码)
+
+    // folderCode 直接使用学科代码
+    folderCode.value = subjectCode;
+
+    // 持久化(保存完整代码)
     localStorage.setItem('zy_context', JSON.stringify({
       grade: newGrade,
-      subject: subjectCode,  // 保存英文代码而不是原始参数
+      subject: subjectCode,
       folderCode: folderCode.value,
       teacherName: teacherName.value
     }));
@@ -99,10 +79,19 @@ export const useContextStore = defineStore('context', () => {
       const parsed = JSON.parse(saved);
       grade.value = parsed.grade;
 
-      // 转换中文科目名为英文代码(兼容旧数据)
-      const subjectCode = SUBJECT_CODES[parsed.subject] || parsed.subject;
-      subject.value = subjectCode;
+      // 兼容旧数据格式转换
+      let subjectCode = parsed.subject;
 
+      // 旧格式映射：biology -> bio, geography -> geo
+      const legacyMapping: Record<string, string> = {
+        'biology': 'bio', 'biology2': 'bio2',
+        'geography': 'geo', 'geography2': 'geo2',
+      };
+      if (legacyMapping[subjectCode]) {
+        subjectCode = legacyMapping[subjectCode];
+      }
+
+      subject.value = subjectCode;
       folderCode.value = parsed.folderCode;
       if (parsed.teacherName) {
         teacherName.value = parsed.teacherName;

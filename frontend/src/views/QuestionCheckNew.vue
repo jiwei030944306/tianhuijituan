@@ -192,10 +192,17 @@ const currentSubject = contextStore.subject || 'math'; // default to math code i
 // 根据当前学段和学科获取题型列表
 const currentLevel = contextStore.grade === 'senior' ? '高中' : '初中';
 // 转换 subject code to chinese name for looking up types
+// 支持初中(xxx)和高中(xxx2)两种代码格式
 const subjectNameMap: Record<string, string> = {
-  'math': '数学', 'chinese': '语文', 'english': '英语', 'physics': '物理',
-  'chemistry': '化学', 'biology': '生物', 'history': '历史',
-  'geography': '地理', 'politics': '道德与法治', 'technology': '通用技术'
+  'math': '数学', 'math2': '数学',
+  'chinese': '语文', 'chinese2': '语文',
+  'english': '英语', 'english2': '英语',
+  'physics': '物理', 'physics2': '物理',
+  'chemistry': '化学', 'chemistry2': '化学',
+  'bio': '生物', 'bio2': '生物',
+  'geo': '地理', 'geo2': '地理',
+  'history': '历史', 'history2': '历史',
+  'politics': '政治', 'politics2': '政治',
 };
 const currentSubjectName = subjectNameMap[currentSubject] || '数学';
 

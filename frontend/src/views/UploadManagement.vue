@@ -112,9 +112,7 @@ const {
   handleConflictResolve
 } = useUploadOperation(
   {
-    folderCode: () => folderCode.value,
-    currentSubject: () => currentSubject.value,
-    currentGrade: () => currentGrade.value,
+    folderCode: () => folderCode.value,  // 学科代码
     currentTeacher: () => currentTeacher.value,
     contextStore
   },

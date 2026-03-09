@@ -198,7 +198,7 @@ import { useUserStore } from '@/stores/user';
 
 import {
   BookOpen, ArrowRight, Zap, GraduationCap, School, Atom, Calculator,
-  Languages, FlaskConical, Globe, Dna, Feather, Hammer, HardDrive
+  Languages, FlaskConical, Globe, Dna, Feather, Scroll
 } from 'lucide-vue-next';
 
 // ==========================================
@@ -228,17 +228,17 @@ const SUBJECT_CONFIG: Record<string, SubjectConfig> = {
   english: { name: '英语', icon: Languages, color: 'text-orange-600', bg: 'bg-orange-100' },
   physics: { name: '物理', icon: Atom, color: 'text-purple-600', bg: 'bg-purple-100' },
   chemistry: { name: '化学', icon: FlaskConical, color: 'text-emerald-600', bg: 'bg-emerald-100' },
-  biology: { name: '生物', icon: Dna, color: 'text-rose-600', bg: 'bg-rose-100' },
-  geography: { name: '地理', icon: Globe, color: 'text-cyan-600', bg: 'bg-cyan-100' },
-  politics: { name: '道德与法治', icon: School, color: 'text-pink-600', bg: 'bg-pink-100' },
-  technology: { name: '通用技术', icon: Hammer, color: 'text-slate-600', bg: 'bg-slate-100' },
+  bio: { name: '生物', icon: Dna, color: 'text-rose-600', bg: 'bg-rose-100' },
+  geo: { name: '地理', icon: Globe, color: 'text-cyan-600', bg: 'bg-cyan-100' },
+  history: { name: '历史', icon: Scroll, color: 'text-amber-600', bg: 'bg-amber-100' },
+  politics: { name: '政治', icon: School, color: 'text-pink-600', bg: 'bg-pink-100' },
 };
 
 // --- 3. 核心代码强调：学段学科映射逻辑 ---
 // 用于过滤各学段下可见的学科列表
 const LEVEL_MAP: Record<Level, string[]> = {
-  '初中': ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'geography', 'politics'],
-  '高中': ['chinese', 'math', 'english', 'physics', 'chemistry', 'biology', 'geography', 'technology']
+  '初中': ['chinese', 'math', 'english', 'physics', 'chemistry', 'bio', 'geo', 'history', 'politics'],
+  '高中': ['chinese', 'math', 'english', 'physics', 'chemistry', 'bio', 'geo', 'history', 'politics']
 };
 
 // --- 局部响应式变量 ---

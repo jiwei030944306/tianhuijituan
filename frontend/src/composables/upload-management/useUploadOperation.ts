@@ -1,6 +1,11 @@
 /**
  * 上传操作逻辑 Composable
  * 职责: 文件上传、冲突检测、进度管理
+ *
+ * 简化版：只需传递 3 个核心字段
+ * - subject_code: 学科代码 (math/math2/...)
+ * - teacher_name: 教师姓名
+ * - json_file: 上传文件
  */
 import { ref } from 'vue';
 import type { Ref } from 'vue';
@@ -19,15 +24,12 @@ export interface ConflictInfo {
 }
 
 export interface ContextStore {
-  subject?: string;
-  grade?: string;
+  subject?: string;  // 学科代码 (math/math2/...)
 }
 
 export function useUploadOperation(
   contextInfo: {
-    folderCode: () => string;
-    currentSubject: () => string;
-    currentGrade: () => string;
+    folderCode: () => string;  // 实际上是学科代码
     currentTeacher: () => string;
     contextStore: ContextStore;
   },
@@ -46,8 +48,6 @@ export function useUploadOperation(
   const conflictInfo = ref<ConflictInfo>({ conflict: false, message: '', options: [] });
   const showConflictDialog = ref(false);
   const pendingFile = ref<File | null>(null);
-  const displayName = ref('');
-  const pendingDisplayName = ref('');
   const pendingConflictAction = ref('new');
   let resolvePendingFile: ((value: void) => void) | null = null;
 
@@ -64,7 +64,6 @@ export function useUploadOperation(
       }
       files.value.push(...newFiles);
       uploadComplete.value = false;
-      displayName.value = newFiles[0].name.replace(/\.[^/.]+$/, '');
       target.value = '';
     }
   };
@@ -80,15 +79,10 @@ export function useUploadOperation(
   };
 
   // 执行上传
-  const performUpload = async (file: File, conflictAction: string, folderDisplayName?: string) => {
+  const performUpload = async (file: File, conflictAction: string) => {
     const formData = new FormData();
     formData.append('json_file', file);
-    formData.append('folder_name', folderDisplayName || displayName.value || file.name.replace(/\.[^/.]+$/, ''));
-    formData.append('subject', contextInfo.currentSubject());
-    formData.append('subject_code', contextInfo.contextStore.subject || '');
-    formData.append('grade', contextInfo.contextStore.grade === 'senior' ? '11' : '8');
-    formData.append('education_level', contextInfo.currentGrade());
-    formData.append('folder_code', contextInfo.folderCode());
+    formData.append('subject_code', contextInfo.folderCode());  // 学科代码
     formData.append('teacher_name', contextInfo.currentTeacher());
     formData.append('conflict_action', conflictAction);
 
@@ -119,7 +113,8 @@ export function useUploadOperation(
   const handleUpload = async () => {
     if (files.value.length === 0) return;
 
-    if (!contextInfo.folderCode() || contextInfo.folderCode() === '-') {
+    const subjectCode = contextInfo.folderCode();
+    if (!subjectCode || subjectCode === '-') {
       addLog('环境信息不完整，请重新选择学科学段', 'error');
       return;
     }
@@ -142,14 +137,13 @@ export function useUploadOperation(
     try {
       for (let i = 0; i < files.value.length; i++) {
         const file = files.value[i];
-        const currentDisplayName = file.name.replace(/\.[^/.]+$/, '');
 
         addLog(`[${i + 1}/${files.value.length}] 处理文件: ${file.name}`, 'info');
 
         addLog(`[${i + 1}/${files.value.length}] 开始冲突检测...`, 'info');
         debuggerRef?.value?.logInfo('冲突检测', `开始冲突检测请求 (${i + 1}/${files.value.length})`, {
           original_filename: file.name,
-          folder_code: contextInfo.folderCode(),
+          subject_code: subjectCode,
           teacher_name: contextInfo.currentTeacher()
         });
 
@@ -158,7 +152,7 @@ export function useUploadOperation(
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             original_filename: file.name,
-            folder_code: contextInfo.folderCode(),
+            folder_code: subjectCode,
             teacher_name: contextInfo.currentTeacher()
           })
         });
@@ -175,7 +169,6 @@ export function useUploadOperation(
         );
 
         let conflictAction = 'new';
-        let actualDisplayName = currentDisplayName;
 
         if (conflictData.conflict) {
           addLog(`[${i + 1}/${files.value.length}] 发现冲突: ${conflictData.message}`, 'warning');
@@ -184,7 +177,6 @@ export function useUploadOperation(
           conflictInfo.value = conflictData;
           showConflictDialog.value = true;
           pendingFile.value = file;
-          pendingDisplayName.value = currentDisplayName;
 
           await new Promise<void>((resolve) => {
             resolvePendingFile = resolve;
@@ -196,13 +188,12 @@ export function useUploadOperation(
           }
 
           conflictAction = pendingConflictAction.value;
-          actualDisplayName = pendingDisplayName.value;
         } else {
           addLog(`[${i + 1}/${files.value.length}] 无冲突，继续上传`, 'success');
         }
 
         addLog(`[${i + 1}/${files.value.length}] 开始上传...`, 'info');
-        await performUpload(file, conflictAction, actualDisplayName);
+        await performUpload(file, conflictAction);
 
         progress.value = ((i + 1) / files.value.length) * 100;
         addLog(`[${i + 1}/${files.value.length}] 处理完成`, 'success');
@@ -234,20 +225,7 @@ export function useUploadOperation(
       return;
     }
 
-    if (action === 'rename') {
-      const newName = prompt('请输入新的文件夹名称:', pendingDisplayName.value + '_副本');
-      if (newName) {
-        pendingDisplayName.value = newName;
-      } else {
-        pendingFile.value = null;
-        if (resolvePendingFile) {
-          resolvePendingFile();
-          resolvePendingFile = null;
-        }
-        return;
-      }
-    }
-
+    // overwrite 或 rename 都执行覆盖逻辑
     pendingConflictAction.value = action;
 
     uploading.value = true;
@@ -264,13 +242,11 @@ export function useUploadOperation(
     progress,
     uploadComplete,
     fileInputRef,
-    displayName,
 
     // 冲突相关
     conflictInfo,
     showConflictDialog,
     pendingFile,
-    pendingDisplayName,
     pendingConflictAction,
 
     // 方法

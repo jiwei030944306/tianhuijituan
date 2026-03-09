@@ -28,37 +28,41 @@ logger = __import__("logging").getLogger(__name__)
 async def process_upload_folder(
     db: AsyncSession,
     json_file: UploadFile,
-    folder_code: str,
-    folder_name: str,
-    subject: str,
+    subject_code: str,
+    subject_name: str,
     education_level: str,
-    grade: Optional[str] = None,  # 改为 str，因为前端可能发 "8" 或 "11"
     teacher_name: str = "",
     conflict_action: str = "new",
 ) -> dict:
-    """Process uploading a question folder. Heavy business logic moved from API route.
+    """Process uploading a question folder. Simplified version.
 
-    This function encapsulates the original upload-question-folder workflow:
-    - optional overwrite handling via existing upload records
-    - batch folder creation and ZIP extraction/validation
-    - JSON parsing to count questions and detect types
-    - image counting
-    - DB record creation and operations.json update
-    - quality check and AI URL conversion
-    - return a consistent response payload identical to the API route
+    Args:
+        db: 数据库会话
+        json_file: 上传的文件
+        subject_code: 学科代码 (math/math2/...)
+        subject_name: 学科名称 (数学/物理/...)
+        education_level: 学段 (高中/初中)
+        teacher_name: 教师姓名
+        conflict_action: 冲突处理方式
+
+    Returns:
+        上传结果信息
     """
     try:
-        # 1. Overwrite handling: delete old records if requested
+        # 1. 从文件名推导显示名称
+        filename = json_file.filename or "unknown.zip"
+        display_name = os.path.splitext(filename)[0]  # 移除扩展名
+
+        # 2. Overwrite handling: delete old records if requested
         if conflict_action == "overwrite":
-            filename = json_file.filename or "unknown.zip"
             await delete_upload_record(
-                db, folder_code, teacher_name, filename, date.today()
+                db, subject_code, teacher_name, filename, date.today()
             )
 
-        # 2. Batch and folder setup
+        # 3. Batch and folder setup
         batch_id = generate_batch_id()
         record_date = date.today()
-        batch_folder = create_batch_folder(folder_code, batch_id)
+        batch_folder = create_batch_folder(subject_code, batch_id)
         json_path = os.path.join(batch_folder, "questions.json")
         image_count = 0
         question_count = 0
@@ -174,16 +178,15 @@ async def process_upload_folder(
                 pass
 
         # 5. DB record creation
-        filename = json_file.filename or "unknown.zip"
         record = await create_upload_record(
             db=db,
-            folder_code=folder_code,
+            folder_code=subject_code,
             education_level=education_level,
-            subject=subject,
+            subject=subject_name,
             batch_id=batch_id,
             record_date=record_date,
             full_path=batch_folder,
-            display_name=folder_name,
+            display_name=display_name,
             original_filename=filename,
             teacher_name=teacher_name,
             file_count=question_count,
@@ -200,24 +203,24 @@ async def process_upload_folder(
             "batch_id": batch_id,
             "timestamp": datetime.now().isoformat(),
             "teacher_name": teacher_name,
-            "display_name": folder_name,
-            "original_filename": json_file.filename,
+            "display_name": display_name,
+            "original_filename": filename,
             "file_count": question_count,
             "image_count": image_count,
             "status": "completed",
             "type_distribution": type_stats,
             "dominant_type": dominant_type,
         }
-        write_operations_json(folder_code, education_level, subject, record_date, operations_record)
+        write_operations_json(subject_code, record_date, operations_record)
 
-        # 7. Return result payload identical to API route
+        # 7. Return result payload
         return {
             "success": True,
             "batch_id": batch_id,
-            "folder_code": folder_code,
+            "subject_code": subject_code,
             "record_date": record_date.strftime("%Y-%m-%d"),
             "full_path": batch_folder,
-            "display_name": folder_name,
+            "display_name": display_name,
             "question_count": question_count,
             "image_count": image_count,
             "uploaded_at": record.uploaded_at.isoformat(),

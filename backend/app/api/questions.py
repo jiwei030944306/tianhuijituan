@@ -312,31 +312,42 @@ async def check_conflict(
 
 @router.post("/upload-folder")
 async def upload_question_folder(
-    json_file: UploadFile = File(..., description="题目 JSON 文件"),
-    folder_name: str = Form(..., description="文件夹名称"),
-    subject: str = Form(..., description="科目"),
-    subject_code: str = Form(..., description="科目代码"),
-    grade: str = Form(..., description="年级"),  # 改为 string，后端再转换
-    education_level: str = Form(..., description="学段"),
-    folder_code: str = Form(..., description="文件夹短代码"),
+    json_file: UploadFile = File(..., description="题目 JSON/ZIP 文件"),
+    subject_code: str = Form(..., description="学科代码，如 math, math2, physics"),
     teacher_name: str = Form(..., description="老师姓名"),
     conflict_action: str = Form(default="new", description="冲突处理方式"),
     db: AsyncSession = Depends(get_db)
 ):
     """
-    上传试题文件夹（第 9 步改造版）
-    
-    业务逻辑下沉至 CRUD 层的重构入口，保持 API 签名不变。
+    上传试题文件夹（简化版）
+
+    只需传递：
+    - json_file: 上传的文件
+    - subject_code: 学科代码 (math/math2/physics/...)
+    - teacher_name: 上传教师
+    - conflict_action: 冲突处理方式 (可选)
+
+    后端自动推导 subject、education_level 等信息
     """
     from app.crud.upload import process_upload_folder
+    from app.constants.subject import get_subject_info, is_valid_subject_code
+
+    # 验证学科代码
+    if not is_valid_subject_code(subject_code):
+        raise HTTPException(
+            status_code=400,
+            detail=f"无效的学科代码: {subject_code}"
+        )
+
+    # 获取学科信息
+    subject_info = get_subject_info(subject_code)
+
     return await process_upload_folder(
         db=db,
         json_file=json_file,
-        folder_code=folder_code,
-        folder_name=folder_name,
-        subject=subject,
-        education_level=education_level,
-        grade=grade,
+        subject_code=subject_code,
+        subject_name=subject_info["subject_name"],
+        education_level=subject_info["education_level"],
         teacher_name=teacher_name,
         conflict_action=conflict_action,
     )

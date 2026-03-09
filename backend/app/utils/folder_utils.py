@@ -60,32 +60,31 @@ def generate_batch_id() -> str:
     return f"{date_str}-{time_str}-{random_code}"
 
 
-def get_main_folder_path(folder_code: str) -> str:
+def get_main_folder_path(subject_code: str) -> str:
     """
     获取主文件夹路径
-    
+
     Args:
-        folder_code: 学科学段短代码，如：h7s9m2
-        
+        subject_code: 学科代码，如：math, math2, physics, physics2
+
     Returns:
-        主文件夹完整路径，如：data/uploads/wks_h7s9m2/
+        主文件夹完整路径，如：data/uploads/math/
     """
-    # 使用 wks_ 前缀区分新旧格式（workspace的缩写）
-    return os.path.join(UPLOAD_ROOT, f"wks_{folder_code}")
+    return os.path.join(UPLOAD_ROOT, subject_code)
 
 
-def get_batch_folder_path(folder_code: str, batch_id: str) -> str:
+def get_batch_folder_path(subject_code: str, batch_id: str) -> str:
     """
     获取批次文件夹路径
-    
+
     Args:
-        folder_code: 学科学段短代码
+        subject_code: 学科代码
         batch_id: 批次ID
-        
+
     Returns:
-        批次文件夹完整路径，如：data/uploads/wks_h7s9m2/20260201-143000-a7x9k2/
+        批次文件夹完整路径，如：data/uploads/math/20260201-143000-a7x9k2/
     """
-    return os.path.join(get_main_folder_path(folder_code), batch_id)
+    return os.path.join(get_main_folder_path(subject_code), batch_id)
 
 
 def ensure_folder_exists(folder_path: str) -> str:
@@ -102,34 +101,34 @@ def ensure_folder_exists(folder_path: str) -> str:
     return folder_path
 
 
-def get_operations_file_path(folder_code: str, record_date: date) -> str:
+def get_operations_file_path(subject_code: str, record_date: date) -> str:
     """
-    获取operations.json文件路径
-    
+    获取 operations.json 文件路径
+
     Args:
-        folder_code: 学科学段短代码
+        subject_code: 学科代码
         record_date: 记录日期
-        
+
     Returns:
-        operations.json文件路径，如：uploads/h7s9m2/operations-20260201.json
+        operations.json 文件路径，如：uploads/math/operations-20260201.json
     """
-    main_folder = get_main_folder_path(folder_code)
+    main_folder = get_main_folder_path(subject_code)
     date_str = record_date.strftime("%Y%m%d")
     return os.path.join(main_folder, f"operations-{date_str}.json")
 
 
-def read_operations_json(folder_code: str, record_date: date) -> Optional[Dict[str, Any]]:
+def read_operations_json(subject_code: str, record_date: date) -> Optional[Dict[str, Any]]:
     """
-    读取operations.json文件
+    读取 operations.json 文件
 
     Args:
-        folder_code: 学科学段短代码
+        subject_code: 学科代码
         record_date: 记录日期
 
     Returns:
-        JSON内容字典，文件不存在返回None
+        JSON内容字典，文件不存在返回 None
     """
-    file_path = get_operations_file_path(folder_code, record_date)
+    file_path = get_operations_file_path(subject_code, record_date)
 
     if not os.path.exists(file_path):
         return None
@@ -138,90 +137,94 @@ def read_operations_json(folder_code: str, record_date: date) -> Optional[Dict[s
         with open(file_path, 'r', encoding='utf-8') as f:
             return json.load(f)
     except Exception as e:
-        logger.error(f"读取operations.json失败: {e}")
+        logger.error(f"读取 operations.json 失败: {e}")
         return None
 
 
 def write_operations_json(
-    folder_code: str,
-    education_level: str,
-    subject: str,
+    subject_code: str,
     record_date: date,
     record: Dict[str, Any]
 ) -> str:
     """
-    写入或更新operations.json文件
-    
+    写入或更新 operations.json 文件（简化版）
+
+    只需传入 subject_code，其他信息自动推导
+
     Args:
-        folder_code: 学科学段短代码
-        education_level: 学段中文
-        subject: 学科中文
+        subject_code: 学科代码 (math/math2/physics/...)
         record_date: 记录日期
         record: 单条上传记录
-        
+
     Returns:
         文件路径
     """
+    from app.constants.subject import get_subject_name, get_education_level
+
+    # 自动推导学科信息
+    subject_name = get_subject_name(subject_code)
+    education_level = get_education_level(subject_code)
+
     # 确保主文件夹存在
-    main_folder = ensure_folder_exists(get_main_folder_path(folder_code))
-    
-    file_path = get_operations_file_path(folder_code, record_date)
-    
+    main_folder = ensure_folder_exists(get_main_folder_path(subject_code))
+
+    file_path = get_operations_file_path(subject_code, record_date)
+
     # 读取现有内容或创建新内容
-    data = read_operations_json(folder_code, record_date)
-    
+    data = read_operations_json(subject_code, record_date)
+
     if data is None:
-        # 创建新文件
+        # 创建新文件（优化后的结构）
         data = {
-            "date": record_date.strftime("%Y-%m-%d"),
-            "folder_code": folder_code,
+            "subject_code": subject_code,
+            "subject_name": subject_name,
             "education_level": education_level,
-            "subject": subject,
+            "date": record_date.strftime("%Y-%m-%d"),
             "total_uploads": 0,
             "last_updated": datetime.now().isoformat(),
             "records": []
         }
-    
+
     # 追加新记录
     data["records"].append(record)
     data["total_uploads"] = len(data["records"])
     data["last_updated"] = datetime.now().isoformat()
-    
+
     # 写入文件
     with open(file_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
-    
+
     return file_path
 
 
-def create_batch_folder(folder_code: str, batch_id: str) -> str:
+def create_batch_folder(subject_code: str, batch_id: str) -> str:
     """
     创建批次文件夹
-    
+
     Args:
-        folder_code: 学科学段短代码
+        subject_code: 学科代码
         batch_id: 批次ID
-        
+
     Returns:
         批次文件夹路径
     """
-    batch_path = get_batch_folder_path(folder_code, batch_id)
+    batch_path = get_batch_folder_path(subject_code, batch_id)
     return ensure_folder_exists(batch_path)
 
 
-def get_all_operations_files(folder_code: str) -> List[str]:
+def get_all_operations_files(subject_code: str) -> List[str]:
     """
-    获取指定 folder_code 下的所有 operations-*.json 文件路径
+    获取指定学科下的所有 operations-*.json 文件路径
 
     Args:
-        folder_code: 学科学段短代码
+        subject_code: 学科代码
 
     Returns:
         operations-*.json 文件路径列表，按日期倒序排序
     """
     import glob
 
-    main_folder = get_main_folder_path(folder_code)
+    main_folder = get_main_folder_path(subject_code)
 
     if not os.path.exists(main_folder):
         return []
@@ -235,18 +238,18 @@ def get_all_operations_files(folder_code: str) -> List[str]:
     return files
 
 
-def delete_batch_folder(folder_code: str, batch_id: str) -> bool:
+def delete_batch_folder(subject_code: str, batch_id: str) -> bool:
     """
     删除批次文件夹
 
     Args:
-        folder_code: 学科学段短代码
+        subject_code: 学科代码
         batch_id: 批次ID
 
     Returns:
         是否成功删除
     """
-    batch_path = get_batch_folder_path(folder_code, batch_id)
+    batch_path = get_batch_folder_path(subject_code, batch_id)
 
     if not os.path.exists(batch_path):
         return False
@@ -260,12 +263,12 @@ def delete_batch_folder(folder_code: str, batch_id: str) -> bool:
         return False
 
 
-def remove_record_from_operations_json(folder_code: str, batch_id: str) -> bool:
+def remove_record_from_operations_json(subject_code: str, batch_id: str) -> bool:
     """
     从 operations.json 中删除指定批次的记录
 
     Args:
-        folder_code: 学科学段短代码
+        subject_code: 学科代码
         batch_id: 批次ID
 
     Returns:
@@ -273,7 +276,7 @@ def remove_record_from_operations_json(folder_code: str, batch_id: str) -> bool:
     """
     import glob
 
-    main_folder = get_main_folder_path(folder_code)
+    main_folder = get_main_folder_path(subject_code)
 
     if not os.path.exists(main_folder):
         return False
